@@ -1,0 +1,6 @@
+{
+  "name": "Celebrations Dashboard",
+  "description": "An interactive, responsive community event and participants hub dashboard with live registrations, alerts, and participation charts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
