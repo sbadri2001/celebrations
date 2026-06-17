@@ -32,3 +32,17 @@ export interface AlertNotification {
   time: string;
   unread: boolean;
 }
+
+export interface Team {
+  id: string;
+  name: string;
+  block: string; // e.g., AH
+  logoUrl: string;
+  captainName: string;
+  captainPictureUrl: string;
+  viceCaptainName: string;
+  viceCaptainPictureUrl: string;
+  participantCount: number;
+  dateCreated: string;
+  contactEmail: string;
+}
