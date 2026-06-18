@@ -18,8 +18,6 @@ export interface RegisterPayload {
   email: string;
   password?: string;
   role?: string;
-  firstName?: string;
-  lastName?: string;
 }
 
 export interface AuthResponse {

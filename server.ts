@@ -145,10 +145,108 @@ async function startServer() {
   // JSON and request body parser
   app.use(express.json());
 
+  // Response formatter middleware to guarantee standard JSON response format
+  app.use((req, res, next) => {
+    const originalJson = res.json;
+    res.json = function (body: any) {
+      if (
+        body &&
+        typeof body === "object" &&
+        "status" in body &&
+        "statusCode" in body &&
+        "data" in body
+      ) {
+        return originalJson.call(this, body);
+      }
+
+      const isSuccess = res.statusCode >= 200 && res.statusCode < 300;
+
+      const formatted = {
+        status: isSuccess ? "SUCCESS" : "FAILURE",
+        statusCode: res.statusCode,
+        message:
+          body?.message ||
+          (isSuccess
+            ? "Request processed successfully"
+            : "An error occurred during request processing"),
+        data: isSuccess ? body : null,
+        errorCode: isSuccess
+          ? null
+          : body?.errorCode || body?.error || "UNKNOWN_ERROR",
+        timestamp: new Date().toISOString(),
+        requestId: `req-${Math.random().toString(36).substring(2, 11)}`,
+      };
+
+      return originalJson.call(this, formatted);
+    };
+    next();
+  });
+
   // Log incoming requests for audit and error debugging
   app.use((req, res, next) => {
     console.log(`[API GATEWAY] ${req.method} ${req.url}`);
     next();
+  });
+
+  // Transparent reverse proxy to Nest.js server on Port 3001
+  app.use("/api", async (req, res, next) => {
+    // Avoid proxying the main API health check of the gateway itself
+    if (req.url === "/health") {
+      return next();
+    }
+
+    const targetUrl = `http://localhost:3001/api${req.url}`;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10.0 second timeout for checking and proxying
+
+      const headers = new Headers();
+      Object.entries(req.headers).forEach(([key, val]) => {
+        if (val !== undefined && key !== "host" && key !== "connection") {
+          if (Array.isArray(val)) {
+            val.forEach((v) => headers.append(key, v));
+          } else {
+            headers.set(key, val);
+          }
+        }
+      });
+
+      const options: RequestInit = {
+        method: req.method,
+        headers: headers,
+        signal: controller.signal,
+      };
+
+      if (
+        ["POST", "PUT", "PATCH", "DELETE"].includes(req.method) &&
+        req.body &&
+        Object.keys(req.body).length > 0
+      ) {
+        options.body = JSON.stringify(req.body);
+        headers.set("content-type", "application/json");
+      }
+
+      const response = await fetch(targetUrl, options);
+      clearTimeout(timeoutId);
+
+      response.headers.forEach((value, name) => {
+        if (name !== "transfer-encoding" && name !== "connection") {
+          res.setHeader(name, value);
+        }
+      });
+
+      const arrayBuffer = await response.arrayBuffer();
+      res.status(response.status).send(Buffer.from(arrayBuffer));
+    } catch (error: any) {
+      console.error(
+        `[API GATEWAY] Proxy connection to NestJS on port 3001 failed:`,
+        error,
+      );
+      res.status(502).json({
+        success: false,
+        message: `Bad Gateway: Connection to backend server on port 3001 failed. Details: ${error.message || error}`,
+      });
+    }
   });
 
   // REST API Routes - NestJS Style Controller Endpoints
@@ -163,12 +261,10 @@ async function startServer() {
   app.post("/api/auth/register", (req, res) => {
     const { name, email, password, role } = req.body;
     if (!name || !email) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Name and email are required parameters.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Name and email are required parameters.",
+      });
     }
     const mockUser = {
       id: `u-${Date.now()}`,
@@ -264,12 +360,10 @@ async function startServer() {
         .json({ statusCode: 400, message: "Team display name is required." });
     }
     if (!block || block.trim() === "") {
-      return res
-        .status(400)
-        .json({
-          statusCode: 400,
-          message: "Block alignment parameter is required.",
-        });
+      return res.status(400).json({
+        statusCode: 400,
+        message: "Block alignment parameter is required.",
+      });
     }
 
     const newTeam: Team = {
@@ -302,12 +396,10 @@ async function startServer() {
     const teamIndex = teamsDb.findIndex((t) => t.id === id);
 
     if (teamIndex === -1) {
-      return res
-        .status(404)
-        .json({
-          statusCode: 404,
-          message: `Team record with ID "${id}" was not found.`,
-        });
+      return res.status(404).json({
+        statusCode: 404,
+        message: `Team record with ID "${id}" was not found.`,
+      });
     }
 
     const currentTeam = teamsDb[teamIndex];
@@ -325,12 +417,10 @@ async function startServer() {
     } = req.body;
 
     if (name !== undefined && name.trim() === "") {
-      return res
-        .status(400)
-        .json({
-          statusCode: 400,
-          message: "Updated Team name cannot be blank.",
-        });
+      return res.status(400).json({
+        statusCode: 400,
+        message: "Updated Team name cannot be blank.",
+      });
     }
 
     const updatedTeam: Team = {
@@ -372,15 +462,163 @@ async function startServer() {
     const teamIndex = teamsDb.findIndex((t) => t.id === id);
 
     if (teamIndex === -1) {
-      return res
-        .status(404)
-        .json({
-          statusCode: 404,
-          message: `Team record with ID "${id}" was not found.`,
-        });
+      return res.status(404).json({
+        statusCode: 404,
+        message: `Team record with ID "${id}" was not found.`,
+      });
     }
 
     teamsDb = teamsDb.filter((t) => t.id !== id);
+    res.json({ success: true, id });
+  });
+
+  // --- EDITIONS IN-MEMORY DB & REST API ENDPOINTS ---
+  interface Edition {
+    id: string;
+    name: string;
+    year: number;
+    description: string;
+    isActive: boolean;
+    status: "draft" | "active";
+  }
+
+  let editionsDb: Edition[] = [
+    {
+      id: "ed-1",
+      name: "Summer Festival 2024",
+      year: 2024,
+      description:
+        "Last years gorgeous community collection of events & art showcases",
+      isActive: false,
+      status: "draft",
+    },
+    {
+      id: "ed-2",
+      name: "Autumn Gala 2025",
+      year: 2025,
+      description:
+        "Active autumn competitions featuring community block wars & food fairs",
+      isActive: false,
+      status: "draft",
+    },
+  ];
+
+  // 1. GET ALL EDITIONS
+  app.get("/api/editions", (req, res) => {
+    res.json(editionsDb);
+  });
+
+  // 2. CREATE EDITION
+  app.post("/api/editions", (req, res) => {
+    const { name, year, description, isActive } = req.body;
+    if (!name || name.trim() === "") {
+      return res
+        .status(400)
+        .json({ statusCode: 400, message: "Edition name is required." });
+    }
+    const targetYear = Number(year) || new Date().getFullYear();
+    const shouldBeActive = !!isActive;
+
+    const newEdition: Edition = {
+      id: `ed-${Date.now()}`,
+      name: name.trim(),
+      year: targetYear,
+      description: description || "New community festival celebration edition.",
+      isActive: shouldBeActive,
+      status: shouldBeActive ? "active" : "draft",
+    };
+
+    editionsDb.push(newEdition);
+    res.status(201).json(newEdition);
+  });
+
+  // 3. ACTIVATE EDITION
+  app.put("/api/editions/:id/activate", (req, res) => {
+    const { id } = req.params;
+    const editionIndex = editionsDb.findIndex((e) => e.id === id);
+
+    if (editionIndex === -1) {
+      return res.status(404).json({
+        statusCode: 404,
+        message: `Edition record with ID "${id}" was not found.`,
+      });
+    }
+
+    // Activate the requested one
+    editionsDb[editionIndex].isActive = true;
+    editionsDb[editionIndex].status = "active";
+
+    res.json(editionsDb[editionIndex]);
+  });
+
+  // 3b. DEACTIVATE EDITION
+  app.put("/api/editions/:id/deactivate", (req, res) => {
+    const { id } = req.params;
+    const editionIndex = editionsDb.findIndex((e) => e.id === id);
+
+    if (editionIndex === -1) {
+      return res.status(404).json({
+        statusCode: 404,
+        message: `Edition record with ID "${id}" was not found.`,
+      });
+    }
+
+    // Deactivate the requested one
+    editionsDb[editionIndex].isActive = false;
+    editionsDb[editionIndex].status = "draft";
+
+    res.json(editionsDb[editionIndex]);
+  });
+
+  // 4. UPDATE EDITION
+  app.put("/api/editions/:id", (req, res) => {
+    const { id } = req.params;
+    const editionIndex = editionsDb.findIndex((e) => e.id === id);
+
+    if (editionIndex === -1) {
+      return res.status(404).json({
+        statusCode: 404,
+        message: `Edition record with ID "${id}" was not found.`,
+      });
+    }
+
+    const { name, year, description, isActive, status } = req.body;
+    const current = editionsDb[editionIndex];
+
+    const shouldBeActive =
+      isActive !== undefined ? !!isActive : current.isActive;
+
+    const updatedEdition: Edition = {
+      ...current,
+      name: name !== undefined ? name.trim() : current.name,
+      year: year !== undefined ? Number(year) : current.year,
+      description:
+        description !== undefined ? description : current.description,
+      isActive: shouldBeActive,
+      status: shouldBeActive
+        ? "active"
+        : status !== undefined
+          ? status
+          : current.status,
+    };
+
+    editionsDb[editionIndex] = updatedEdition;
+    res.json(updatedEdition);
+  });
+
+  // 5. DELETE EDITION
+  app.delete("/api/editions/:id", (req, res) => {
+    const { id } = req.params;
+    const editionIndex = editionsDb.findIndex((e) => e.id === id);
+
+    if (editionIndex === -1) {
+      return res.status(404).json({
+        statusCode: 404,
+        message: `Edition record with ID "${id}" was not found.`,
+      });
+    }
+
+    editionsDb = editionsDb.filter((e) => e.id !== id);
     res.json({ success: true, id });
   });
 

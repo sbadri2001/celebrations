@@ -7,7 +7,6 @@ import {
   Smartphone,
   ArrowLeft,
   AlertCircle,
-  ChevronDown,
   ArrowRight,
   Sparkles,
   User,
@@ -16,7 +15,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { AuthService } from "../../services/auth/authService";
 
 interface LoginScreenProps {
-  onLoginSuccess: (userName: string) => void;
+  onLoginSuccess: (userName: string, email?: string, role?: string) => void;
   communityName: string;
   triggerToast: (msg: string) => void;
 }
@@ -28,12 +27,11 @@ export default function LoginScreen({
 }: LoginScreenProps) {
   // Navigation between login sub-screens
   const [authScreen, setAuthScreen] = useState<
-    "login" | "phone" | "otp" | "reset-password" | "check-email"
+    "login" | "register" | "phone" | "otp" | "reset-password" | "check-email"
   >("login");
 
   // Input fields state
-  const [firstName, setFirstName] = useState("John");
-  const [lastName, setLastName] = useState("Doe");
+  const [name, setName] = useState("John Doe");
   const [email, setEmail] = useState("you@example.com");
   const [password, setPassword] = useState("password123");
   const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +43,7 @@ export default function LoginScreen({
   // Custom states for interactive simulation
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [showInlineErrors, setShowInlineErrors] = useState(false);
+  const [backendErrorMessage, setBackendErrorMessage] = useState("");
 
   // OTP input refs
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -53,64 +52,137 @@ export default function LoginScreen({
   const [resetEmail, setResetEmail] = useState("name@example.com");
   const [isLoading, setIsLoading] = useState(false);
 
-  const isFirstNameError = showInlineErrors && !firstName.trim();
-  const isLastNameError = showInlineErrors && !lastName.trim();
-  const isEmailError = showInlineErrors && (!email || !email.includes("@"));
+  // Derived Error conditions for inline error messages
+  const isNameError = showInlineErrors && !name.trim();
+  const isEmailError =
+    showInlineErrors && (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
   const isPasswordError =
     showInlineErrors && (!password || password.length < 6);
 
-  // Multi-step mock handler
-  const handleEmailSignInSubmit = async (e: React.FormEvent) => {
+  // Sign In / Login Form submission handler
+  const handleEmailLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Simulate error dialog flow first if requested
-    if (email === "fail@example.com" || password === "error") {
-      setShowErrorDialog(true);
+    const isEmailInvalid = !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const isPasswordInvalid = !password || password.length < 6;
+
+    if (isEmailInvalid || isPasswordInvalid) {
+      setShowInlineErrors(true);
+      // Only show inline error messages, do not trigger modal showErrorDialog
       return;
     }
 
-    // Default simulation behavior:
-    // If name, email, or password are invalid/empty, show validation errors
-    const isFirstNameInvalid = !firstName || !firstName.trim();
-    const isLastNameInvalid = !lastName || !lastName.trim();
-    const isEmailInvalid = !email || !email.includes("@");
-    const isPasswordInvalid = !password || password.length < 6;
-
-    if (
-      isFirstNameInvalid ||
-      isLastNameInvalid ||
-      isEmailInvalid ||
-      isPasswordInvalid
-    ) {
-      setShowInlineErrors(true);
+    // Simulate backend error if specified inputs are used
+    if (email === "fail@example.com" || password === "error") {
+      setBackendErrorMessage("Invalid email or password (simulation)");
       setShowErrorDialog(true);
       return;
     }
 
     setIsLoading(true);
+    setBackendErrorMessage("");
     try {
-      const fullName = `${firstName.trim()} ${lastName.trim()}`;
-
-      // Save details to the DB via registration
-      const response = await AuthService.register({
+      const response = (await AuthService.login({
         email: email,
         password: password,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-      });
+      })) as any;
 
-      if (response && response.success) {
-        onLoginSuccess(response.user?.name || fullName || email || "Admin");
+      const isOk =
+        response && (response.status === "SUCCESS" || response.success);
+      if (isOk) {
+        const authData = response.data || response;
+        if (authData.accessToken) {
+          localStorage.setItem("accessToken", authData.accessToken);
+        }
+        onLoginSuccess(
+          authData.user?.name || email || "Admin",
+          authData.user?.email || email,
+          authData.user?.role,
+        );
         triggerToast("Logged in successfully!");
       } else {
+        setBackendErrorMessage(
+          response?.message || "Invalid credentials or sign-in failed",
+        );
         setShowErrorDialog(true);
       }
-    } catch (err) {
-      console.error("Registration/Login failed:", err);
-      // Fallback for offline mode or standard mocks
-      const fullName = `${firstName.trim()} ${lastName.trim()}`;
-      onLoginSuccess(fullName || email || "Admin");
-      triggerToast("Logged in successfully!");
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      let message =
+        "Could not connect to authentication services. Please verify the Nest.js backend is running.";
+      if (err.data && typeof err.data === "object" && err.data.message) {
+        message = Array.isArray(err.data.message)
+          ? err.data.message.join(", ")
+          : String(err.data.message);
+      } else if (err.message) {
+        message = err.message;
+      }
+      setBackendErrorMessage(message);
+      setShowErrorDialog(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Registration Form submission handler
+  const handleEmailRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const isNameInvalid = !name || !name.trim();
+    const isEmailInvalid = !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const isPasswordInvalid = !password || password.length < 6;
+
+    if (isNameInvalid || isEmailInvalid || isPasswordInvalid) {
+      setShowInlineErrors(true);
+      // Only show inline error messages, do not trigger modal showErrorDialog
+      return;
+    }
+
+    if (email === "fail@example.com" || password === "error") {
+      setBackendErrorMessage("Simulation failure during registration");
+      setShowErrorDialog(true);
+      return;
+    }
+
+    setIsLoading(true);
+    setBackendErrorMessage("");
+    try {
+      const response = (await AuthService.register({
+        name: name.trim(),
+        email: email,
+        password: password,
+      })) as any;
+
+      const isOk =
+        response && (response.status === "SUCCESS" || response.success);
+      if (isOk) {
+        const authData = response.data || response;
+        if (authData.accessToken) {
+          localStorage.setItem("accessToken", authData.accessToken);
+        }
+        onLoginSuccess(
+          authData.user?.name || name.trim() || email || "User",
+          authData.user?.email || email,
+          authData.user?.role || "user",
+        );
+        triggerToast("Registered & logged in successfully!");
+      } else {
+        setBackendErrorMessage(response?.message || "Registration failed");
+        setShowErrorDialog(true);
+      }
+    } catch (err: any) {
+      console.error("Registration failed:", err);
+      let message =
+        "Could not complete registration. Please verify the Nest.js backend is running.";
+      if (err.data && typeof err.data === "object" && err.data.message) {
+        message = Array.isArray(err.data.message)
+          ? err.data.message.join(", ")
+          : String(err.data.message);
+      } else if (err.message) {
+        message = err.message;
+      }
+      setBackendErrorMessage(message);
+      setShowErrorDialog(true);
     } finally {
       setIsLoading(false);
     }
@@ -162,7 +234,7 @@ export default function LoginScreen({
 
   const handleSendResetLink = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetEmail.includes("@")) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)) {
       triggerToast("Please provide a valid email address.");
       return;
     }
@@ -182,7 +254,8 @@ export default function LoginScreen({
         <div className="w-full flex items-center justify-between px-2 mb-2">
           {authScreen === "phone" ||
           authScreen === "otp" ||
-          authScreen === "reset-password" ? (
+          authScreen === "reset-password" ||
+          authScreen === "register" ? (
             <button
               type="button"
               onClick={() => {
@@ -261,6 +334,9 @@ export default function LoginScreen({
             <button
               type="button"
               onClick={() => {
+                setBackendErrorMessage(
+                  "Simulated error: Nest.js server connection refused on port 3001",
+                );
                 setShowErrorDialog(true);
                 triggerToast("Failure overlay triggered");
               }}
@@ -277,6 +353,7 @@ export default function LoginScreen({
             <div className="flex items-center gap-1">
               {[
                 { id: "login", label: "Email" },
+                { id: "register", label: "Register" },
                 { id: "phone", label: "Phone" },
                 { id: "otp", label: "OTP" },
                 { id: "reset-password", label: "Reset" },
@@ -298,7 +375,7 @@ export default function LoginScreen({
         {/* MAIN CONTAINER BOX WITH SHADOW AND BLURRED COVERS */}
         <div className="bg-white/95 rounded-[2.2rem] border border-[#f5ded7] shadow-xl p-8 relative overflow-hidden transition-all duration-300 min-h-[510px] flex flex-col justify-center">
           <AnimatePresence mode="wait">
-            {/* VIEW 1: EMAIL SIGN IN */}
+            {/* VIEW 1: EMAIL SIGN IN (Welcome back only on sign in / login) */}
             {authScreen === "login" && (
               <motion.div
                 key="email-login-screen"
@@ -318,72 +395,7 @@ export default function LoginScreen({
                 </div>
 
                 {/* Form Elements */}
-                <form onSubmit={handleEmailSignInSubmit} className="space-y-4">
-                  {/* First Name & Last Name */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label
-                        htmlFor="login-firstname"
-                        className="text-xs font-bold text-slate-500 tracking-wide block"
-                      >
-                        First name
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                          <User className="w-5 h-5" />
-                        </div>
-                        <input
-                          id="login-firstname"
-                          type="text"
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          className={`w-full bg-white border ${isFirstNameError ? "border-[#a83200] focus:ring-[#a83200]" : "border-slate-200 focus:ring-amber-500"} focus:ring-2 focus:outline-none rounded-2xl pl-12 pr-4 py-3.5 text-[15px] font-sans font-medium text-slate-800 transition-all shadow-xs`}
-                          placeholder="John"
-                        />
-                      </div>
-                      {isFirstNameError && (
-                        <motion.p
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="text-[#a83200] text-[13px] font-semibold tracking-wide mt-1 ml-1"
-                        >
-                          First name is required
-                        </motion.p>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <label
-                        htmlFor="login-lastname"
-                        className="text-xs font-bold text-slate-500 tracking-wide block"
-                      >
-                        Last name
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                          <User className="w-5 h-5" />
-                        </div>
-                        <input
-                          id="login-lastname"
-                          type="text"
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          className={`w-full bg-white border ${isLastNameError ? "border-[#a83200] focus:ring-[#a83200]" : "border-slate-200 focus:ring-amber-500"} focus:ring-2 focus:outline-none rounded-2xl pl-12 pr-4 py-3.5 text-[15px] font-sans font-medium text-slate-800 transition-all shadow-xs`}
-                          placeholder="Doe"
-                        />
-                      </div>
-                      {isLastNameError && (
-                        <motion.p
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="text-[#a83200] text-[13px] font-semibold tracking-wide mt-1 ml-1"
-                        >
-                          Last name is required
-                        </motion.p>
-                      )}
-                    </div>
-                  </div>
-
+                <form onSubmit={handleEmailLoginSubmit} className="space-y-4">
                   {/* Email address box */}
                   <div className="space-y-1">
                     <label
@@ -405,7 +417,6 @@ export default function LoginScreen({
                         placeholder="you@example.com"
                       />
                     </div>
-                    {/* Simulated Inline static red warning shown in Image 1 */}
                     {isEmailError && (
                       <motion.p
                         initial={{ opacity: 0, y: -4 }}
@@ -460,7 +471,6 @@ export default function LoginScreen({
                       </button>
                     </div>
 
-                    {/* Inline password failure message shown in Image 1 */}
                     {isPasswordError && (
                       <motion.p
                         initial={{ opacity: 0, y: -4 }}
@@ -485,11 +495,11 @@ export default function LoginScreen({
                 </form>
 
                 {/* Sign in with phone option */}
-                <div className="text-center pt-1">
+                <div className="text-center pt-1 font-sans">
                   <button
                     type="button"
                     onClick={() => setAuthScreen("phone")}
-                    className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 font-extrabold text-sm transition-all py-1 cursor-pointer focus:outline-none"
+                    className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 font-extrabold text-sm transition-all py-1 cursor-pointer focus:outline-none font-sans"
                   >
                     <Smartphone className="w-4.5 h-4.5" />
                     Sign in with phone number
@@ -499,7 +509,7 @@ export default function LoginScreen({
                 {/* OR divider */}
                 <div className="relative flex py-2 items-center">
                   <div className="flex-grow border-t border-slate-100"></div>
-                  <span className="flex-shrink mx-4 text-slate-400 font-extrabold text-[10px] tracking-widest uppercase">
+                  <span className="flex-shrink mx-4 text-slate-400 font-extrabold text-[10px] tracking-widest uppercase font-sans">
                     OR SIGN IN WITH
                   </span>
                   <div className="flex-grow border-t border-slate-100"></div>
@@ -536,16 +546,173 @@ export default function LoginScreen({
                 </div>
 
                 {/* Footer sign up prompt */}
-                <div className="text-center text-xs text-slate-500 font-medium">
+                <div className="text-center text-xs text-slate-500 font-medium font-sans">
                   Don't have an account?{" "}
                   <button
                     type="button"
-                    onClick={() =>
-                      triggerToast("Registration is managed by administrators.")
-                    }
+                    onClick={() => setAuthScreen("register")}
                     className="text-[#a83200] font-black hover:underline focus:outline-none cursor-pointer"
+                    id="signup-link"
                   >
                     Sign up for free
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* VIEW 1B: REGISTRATION PAGE (No welcome back message, single name field) */}
+            {authScreen === "register" && (
+              <motion.div
+                key="email-register-screen"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                className="space-y-6 flex flex-col justify-between h-full"
+              >
+                {/* Intro Headers - NO Welcome Back message */}
+                <div className="text-center space-y-1.5">
+                  <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                    Create Account
+                  </h2>
+                  <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-xs mx-auto">
+                    Join the {communityName} community to get started
+                  </p>
+                </div>
+
+                {/* Form Elements */}
+                <form
+                  onSubmit={handleEmailRegisterSubmit}
+                  className="space-y-4"
+                >
+                  {/* Single Name Field */}
+                  <div className="space-y-1">
+                    <label
+                      htmlFor="register-name"
+                      className="text-xs font-bold text-slate-500 tracking-wide block"
+                    >
+                      Full name
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <User className="w-5 h-5" />
+                      </div>
+                      <input
+                        id="register-name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className={`w-full bg-white border ${isNameError ? "border-[#a83200] focus:ring-[#a83200]" : "border-slate-200 focus:ring-amber-500"} focus:ring-2 focus:outline-none rounded-2xl pl-12 pr-4 py-3.5 text-[15px] font-sans font-medium text-slate-800 transition-all shadow-xs`}
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    {isNameError && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[#a83200] text-[13px] font-semibold tracking-wide mt-1 ml-1"
+                      >
+                        Full name is required
+                      </motion.p>
+                    )}
+                  </div>
+
+                  {/* Email address box */}
+                  <div className="space-y-1">
+                    <label
+                      htmlFor="register-email"
+                      className="text-xs font-bold text-slate-500 tracking-wide block"
+                    >
+                      Email address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <Mail className="w-5 h-5" />
+                      </div>
+                      <input
+                        id="register-email"
+                        type="text"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={`w-full bg-white border ${isEmailError ? "border-[#a83200] focus:ring-[#a83200]" : "border-slate-200 focus:ring-amber-500"} focus:ring-2 focus:outline-none rounded-2xl pl-12 pr-4 py-3.5 text-[15px] font-sans font-medium text-slate-800 transition-all shadow-xs`}
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                    {isEmailError && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[#a83200] text-[13px] font-semibold tracking-wide mt-1 ml-1"
+                      >
+                        Please enter a valid email address
+                      </motion.p>
+                    )}
+                  </div>
+
+                  {/* Password box */}
+                  <div className="space-y-1">
+                    <label
+                      htmlFor="register-password"
+                      className="text-xs font-bold text-slate-500 tracking-wide block"
+                    >
+                      Password
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <input
+                        id="register-password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={`w-full bg-white border ${isPasswordError ? "border-[#a83200] focus:ring-[#a83200]" : "border-slate-200 focus:ring-amber-500"} focus:ring-2 focus:outline-none rounded-2xl pl-12 pr-11 py-3.5 text-[15px] font-sans font-medium text-slate-800 transition-all shadow-xs`}
+                        placeholder="Create a password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                    {isPasswordError && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[#a83200] text-[13px] font-semibold tracking-wide mt-1 ml-1"
+                      >
+                        Password must be at least 6 characters
+                      </motion.p>
+                    )}
+                  </div>
+
+                  {/* Sign Up Primary Action Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-[#a83200] hover:bg-[#c03c05] active:bg-[#902900] text-white py-4 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#a83200] focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? "Creating Account..." : "Sign up"}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Footer sign in prompt */}
+                <div className="text-center text-xs text-slate-500 font-medium font-sans">
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setAuthScreen("login")}
+                    className="text-[#a83200] font-black hover:underline focus:outline-none cursor-pointer"
+                    id="signin-link"
+                  >
+                    Sign in
                   </button>
                 </div>
               </motion.div>
@@ -554,105 +721,86 @@ export default function LoginScreen({
             {/* VIEW 2: PHONE CODE REQUEST */}
             {authScreen === "phone" && (
               <motion.div
-                key="phone-request-screen"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="space-y-7 flex flex-col justify-between"
-              >
-                <div className="text-center space-y-2">
-                  <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
-                    Sign in with Phone
-                  </h2>
-                  <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-xs mx-auto">
-                    Enter your mobile number to receive a 6-digit verification
-                    code.
-                  </p>
-                </div>
-
-                <form onSubmit={handlePhoneSubmit} className="space-y-6">
-                  {/* Phone input row */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 tracking-wide block">
-                      Phone Number
-                    </label>
-                    <div className="flex bg-white border border-slate-200 rounded-2xl pr-4 pl-3 py-1 items-center focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-transparent transition-all shadow-3xs">
-                      {/* Flag dropdown */}
-                      <div className="flex items-center gap-1 cursor-pointer hover:bg-slate-50 px-2 py-2.5 rounded-xl border-r border-slate-100 mr-3">
-                        <span className="text-lg">🇺🇸</span>
-                        <span className="text-sm font-bold text-slate-700">
-                          {countryCode}
-                        </span>
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                      </div>
-
-                      {/* Live input */}
-                      <input
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        className="flex-1 border-none outline-none focus:outline-none focus:ring-0 text-[16px] font-sans font-bold text-slate-800 py-2.5 bg-transparent"
-                        placeholder="(555) 000-0000"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Send Code Action block */}
-                  <button
-                    type="submit"
-                    className="w-full bg-[#a83200] hover:bg-[#c03c05] active:bg-[#902900] text-white py-4 rounded-xl font-extrabold text-sm tracking-wide transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#a83200] cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    Send Code <ArrowRight className="w-4 h-4 ml-1" />
-                  </button>
-                </form>
-
-                {/* OR divider */}
-                <div className="relative flex py-2 items-center">
-                  <div className="flex-grow border-t border-slate-100"></div>
-                  <span className="flex-shrink mx-4 text-slate-400 font-extrabold text-[10px] tracking-widest uppercase">
-                    OR
-                  </span>
-                  <div className="flex-grow border-t border-slate-100"></div>
-                </div>
-
-                {/* Switch back to email */}
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => setAuthScreen("login")}
-                    className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 border border-blue-200/50 hover:border-blue-400 px-5 py-3 rounded-2xl bg-white font-bold text-sm transition-all cursor-pointer shadow-3xs focus:outline-none"
-                  >
-                    <Mail className="w-4.5 h-4.5" />
-                    Sign in with Email
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* VIEW 3: OTP VERIFICATION BOX (Login View 4) */}
-            {authScreen === "otp" && (
-              <motion.div
-                key="otp-screen"
+                key="phone-screen"
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 className="space-y-6 flex flex-col justify-between"
               >
-                {/* Visual phone badge in center */}
-                <div className="flex flex-col items-center justify-center space-y-4">
-                  <div className="w-16 h-16 rounded-[1.3rem] bg-[#fdf2ee] border border-[#fae3d9] flex items-center justify-center text-orange-600 shadow-inner">
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-4 bg-orange-300 rounded-full animate-pulse" />
-                      <div className="w-1 h-6 bg-[#a83200] rounded-full" />
-                      <div className="w-2.5 h-9 border-2 border-orange-600 rounded-sm flex items-center justify-center text-[10px] font-black shrink-0">
-                        •
+                <div className="text-center space-y-2">
+                  <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                    Login with Phone
+                  </h2>
+                  <p className="text-slate-500 font-semibold text-sm leading-relaxed max-w-xs mx-auto">
+                    We will send a 6-digit confirmation code via text message.
+                  </p>
+                </div>
+
+                <form onSubmit={handlePhoneSubmit} className="space-y-6">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 tracking-wide block">
+                      Your Phone Number
+                    </label>
+                    <div className="flex gap-2.5">
+                      <div className="relative">
+                        <select
+                          className="font-sans px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:outline-none"
+                          disabled
+                        >
+                          <option>{countryCode}</option>
+                        </select>
                       </div>
-                      <div className="w-1 h-6 bg-[#a83200] rounded-full" />
-                      <div className="w-1 h-4 bg-orange-300 rounded-full animate-pulse" />
+                      <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                          <Smartphone className="w-5 h-5" />
+                        </div>
+                        <input
+                          type="text"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none rounded-xl pl-12 pr-4 py-3.5 text-[15px] font-sans font-medium text-slate-800 transition-all shadow-3xs"
+                          placeholder="(555) 000-0000"
+                        />
+                      </div>
                     </div>
                   </div>
 
+                  <button
+                    type="submit"
+                    className="w-full bg-[#a83200] hover:bg-[#c03c05] active:bg-[#902900] text-white py-4 rounded-xl font-bold text-sm tracking-wide transition-all shadow-md hover:shadow-lg focus:outline-none cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    Send Multi-Factor Code{" "}
+                    <ArrowRight className="w-4.5 h-4.5" />
+                  </button>
+                </form>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setAuthScreen("login")}
+                    className="text-slate-500 hover:text-slate-705 font-extrabold text-xs cursor-pointer focus:outline-none"
+                  >
+                    Back to email sign in
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* VIEW 3: OTP CODE VERIFICATION */}
+            {authScreen === "otp" && (
+              <motion.div
+                key="otp-screen"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="space-y-6 flex flex-col justify-between"
+              >
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-inner relative">
+                    <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-xl animate-pulse">
+                      •
+                    </div>
+                  </div>
                   <div className="text-center space-y-1.5">
                     <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
                       Verify Phone
@@ -714,7 +862,7 @@ export default function LoginScreen({
               </motion.div>
             )}
 
-            {/* VIEW 4: RESET PASSWORD REQUEST (Login View 5) */}
+            {/* VIEW 4: RESET PASSWORD REQUEST */}
             {authScreen === "reset-password" && (
               <motion.div
                 key="reset-password-screen"
@@ -776,7 +924,7 @@ export default function LoginScreen({
               </motion.div>
             )}
 
-            {/* VIEW 5: RESET EMAILED CONFIRMATION (Login View 6) */}
+            {/* VIEW 5: RESET EMAILED CONFIRMATION */}
             {authScreen === "check-email" && (
               <motion.div
                 key="check-email-screen"
@@ -785,7 +933,7 @@ export default function LoginScreen({
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="space-y-6 flex flex-col justify-between"
               >
-                {/* Big centered orange circle with center dot exactly as in Image 6 */}
+                {/* Big centered orange circle with center dot */}
                 <div className="flex flex-col items-center justify-center space-y-4">
                   <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-inner relative">
                     <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-xl animate-pulse">
@@ -838,7 +986,7 @@ export default function LoginScreen({
             )}
           </AnimatePresence>
 
-          {/* BACKGROUND DIALOG OVERLAY PORTAL (Simulated login failed shown in Login View 2) */}
+          {/* BACKGROUND DIALOG OVERLAY PORTAL (Simulated login failed) */}
           <AnimatePresence>
             {showErrorDialog && (
               <motion.div
@@ -853,7 +1001,6 @@ export default function LoginScreen({
                   exit={{ scale: 0.9, y: 10 }}
                   className="bg-white rounded-3xl border border-red-100 shadow-2xl p-6.5 max-w-xs w-full text-center space-y-6 relative flex flex-col items-center"
                 >
-                  {/* Warning Exclamation Badge Circle shown in Image 2 */}
                   <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-600 shadow-inner animate-bounce">
                     <AlertCircle className="w-8 h-8" />
                   </div>
@@ -863,7 +1010,8 @@ export default function LoginScreen({
                       Sign-in Failed
                     </h3>
                     <p className="text-slate-500 font-semibold text-[13px] leading-relaxed">
-                      Sign in to your Celebrations account to continue
+                      {backendErrorMessage ||
+                        `Sign in to your ${communityName} account to continue`}
                     </p>
                   </div>
 

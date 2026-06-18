@@ -34,16 +34,7 @@ export function isApiError(error: any): error is ApiError {
   );
 }
 
-const getBaseURL = (): string => {
-  if (typeof window !== "undefined") {
-    const { protocol, hostname } = window.location;
-    // Route API requests containing /api/ to port 3001
-    return `${protocol}//${hostname}:3001/api`;
-  }
-  return "http://localhost:3001/api";
-};
-
-const baseURL = getBaseURL();
+const baseURL = "/api";
 let requestInterceptors: RequestInterceptor[] = [];
 let responseInterceptors: ResponseInterceptor[] = [];
 const errorHandlers = new Map<number, (error: ApiError) => void>();
@@ -83,13 +74,21 @@ export function registerGlobalErrorHandler(
   globalErrorHandler = handler;
 }
 
-// Add a default request interceptor to prepare Content-Type headers
+// Add a default request interceptor to prepare Content-Type headers and Authorization headers
 addRequestInterceptor((config) => {
   const headers = new Headers(config.headers || {});
   if (!headers.has("Content-Type") && !(config.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
   headers.set("Accept", "application/json");
+
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+
   return { ...config, headers };
 });
 
@@ -108,19 +107,40 @@ export async function request<T = any>(
   try {
     const response = await fetch(url, config);
 
-    // Handle non-2xx statuses
-    if (!response.ok) {
-      let errorData: any;
+    // Read the response body first to determine success from response contract
+    let data: any;
+    let isJson = false;
+    const contentType = response.headers.get("Content-Type");
+    if (contentType && contentType.includes("application/json")) {
       try {
-        errorData = await response.json();
+        data = await response.json();
+        isJson = true;
       } catch {
-        errorData = await response.text();
+        data = await response.text();
       }
+    } else {
+      data = await response.text();
+    }
 
+    // Determine success based on response "status" property if present, otherwise fallback to response.ok
+    let isSuccess = response.ok;
+    if (isJson && data && typeof data === "object" && "status" in data) {
+      isSuccess = data.status === "SUCCESS";
+    }
+
+    if (!isSuccess) {
+      const statusCode =
+        isJson && data && typeof data === "object" && "statusCode" in data
+          ? data.statusCode
+          : response.status;
+      const statusText =
+        isJson && data && typeof data === "object" && "message" in data
+          ? data.message
+          : response.statusText;
       const apiError = createApiError(
-        response.status,
-        response.statusText,
-        errorData,
+        statusCode,
+        statusText || "API Error",
+        data,
       );
 
       // Execute response interceptor error handlers
@@ -131,7 +151,7 @@ export async function request<T = any>(
       }
 
       // Trigger status specific handler if registered
-      const statusHandler = errorHandlers.get(response.status);
+      const statusHandler = errorHandlers.get(statusCode);
       if (statusHandler) {
         statusHandler(apiError);
       } else if (globalErrorHandler) {
@@ -141,15 +161,7 @@ export async function request<T = any>(
       throw apiError;
     }
 
-    // Massage the success response
-    let data: any;
-    const contentType = response.headers.get("Content-Type");
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      data = await response.text();
-    }
-
+    // Do not extract data from the response wrapper on success, pass it as-is to the component/caller
     // Execute response interceptors sequentially on success
     let massagedData = data as T;
     for (const interceptor of responseInterceptors) {

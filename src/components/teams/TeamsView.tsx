@@ -1,70 +1,99 @@
-import React, { useState, useMemo } from 'react';
-import { motion } from 'motion/react';
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Calendar, 
-  Trash2, 
-  Edit3, 
-  Mail, 
+import React, { useState, useMemo, useEffect } from "react";
+import { motion } from "motion/react";
+import {
+  Users,
+  Plus,
+  Search,
+  Calendar,
+  Trash2,
+  Edit3,
+  Mail,
   AlertCircle,
   Crown,
   Eye,
   Building,
-  Award
-} from 'lucide-react';
-import { Team } from '../../types';
-import Modal from '../common/Modal';
+  Award,
+} from "lucide-react";
+import { Team } from "../../types";
+import Modal from "../common/Modal";
+import { TeamService } from "../../services/teams/teamService";
 
 interface TeamsViewProps {
   teams: Team[];
-  onAddTeam: (team: Omit<Team, 'id' | 'dateCreated'>) => void;
+  onAddTeam: (team: Omit<Team, "id" | "dateCreated">) => void;
   onUpdateTeam: (team: Team) => void;
   onDeleteTeam: (id: string, name: string) => void;
   triggerToast: (msg: string) => void;
+  setTeams?: React.Dispatch<React.SetStateAction<Team[]>>;
 }
 
 // Fallback Avatars
-const fallbackLogo = 'https://images.unsplash.com/photo-1518152006812-edab29b069ac?auto=format&fit=crop&w=150&h=150&q=80';
-const fallbackAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80';
+const fallbackLogo =
+  "https://images.unsplash.com/photo-1518152006812-edab29b069ac?auto=format&fit=crop&w=150&h=150&q=80";
+const fallbackAvatar =
+  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80";
+
+let teamsFetched = false;
 
 export default function TeamsView({
   teams,
   onAddTeam,
   onUpdateTeam,
   onDeleteTeam,
-  triggerToast
+  triggerToast,
+  setTeams,
 }: TeamsViewProps) {
+  useEffect(() => {
+    if (setTeams && !teamsFetched) {
+      teamsFetched = true;
+      TeamService.getAll()
+        .then((res: any) => {
+          const fetchedTeams =
+            (res && res.status === "SUCCESS" ? res.data : res) || [];
+          setTeams(fetchedTeams);
+        })
+        .catch((err) => {
+          console.error("Failed to load registered teams on page load:", err);
+          triggerToast("Error loading active community teams.");
+          // reset on error to allow retrying if they switch tabs
+          teamsFetched = false;
+        });
+    }
+  }, [setTeams]);
+
   // Search Query state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Modal Visibility controls
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
-  
+
   // Active selected item for details/edit
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   // Form Fields state
-  const [teamName, setTeamName] = useState('');
-  const [teamBlock, setTeamBlock] = useState('');
-  const [teamLogoUrl, setTeamLogoUrl] = useState('');
-  const [teamCaptainName, setTeamCaptainName] = useState('');
-  const [teamCaptainPictureUrl, setTeamCaptainPictureUrl] = useState('');
-  const [teamViceCaptainName, setTeamViceCaptainName] = useState('');
-  const [teamViceCaptainPictureUrl, setTeamViceCaptainPictureUrl] = useState('');
-  const [teamDateCreated, setTeamDateCreated] = useState('');
-  const [teamEmail, setTeamEmail] = useState('');
+  const [teamName, setTeamName] = useState("");
+  const [teamBlock, setTeamBlock] = useState("");
+  const [teamLogoUrl, setTeamLogoUrl] = useState("");
+  const [teamCaptainName, setTeamCaptainName] = useState("");
+  const [teamCaptainPictureUrl, setTeamCaptainPictureUrl] = useState("");
+  const [teamViceCaptainName, setTeamViceCaptainName] = useState("");
+  const [teamViceCaptainPictureUrl, setTeamViceCaptainPictureUrl] =
+    useState("");
+  const [teamDateCreated, setTeamDateCreated] = useState("");
+  const [teamEmail, setTeamEmail] = useState("");
 
   // Helper for handles file uploads, converting selected file to readable base64 URL
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setUrl: (url: string) => void) => {
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setUrl: (url: string) => void,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
+        if (typeof reader.result === "string") {
           setUrl(reader.result);
         }
       };
@@ -74,15 +103,21 @@ export default function TeamsView({
 
   // Initializing state for Add Form
   const resetAddForm = () => {
-    setTeamName('');
-    setTeamBlock('AH');
-    setTeamLogoUrl('');
-    setTeamCaptainName('');
-    setTeamCaptainPictureUrl('');
-    setTeamViceCaptainName('');
-    setTeamViceCaptainPictureUrl('');
-    setTeamDateCreated(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-    setTeamEmail('team@community.com');
+    setTeamName("");
+    setTeamBlock("AH");
+    setTeamLogoUrl("");
+    setTeamCaptainName("");
+    setTeamCaptainPictureUrl("");
+    setTeamViceCaptainName("");
+    setTeamViceCaptainPictureUrl("");
+    setTeamDateCreated(
+      new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+    );
+    setTeamEmail("team@community.com");
   };
 
   const handleOpenCreateModal = () => {
@@ -93,11 +128,11 @@ export default function TeamsView({
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!teamName.trim()) {
-      triggerToast('Please provide a team display name.');
+      triggerToast("Please provide a team display name.");
       return;
     }
     if (!teamBlock.trim()) {
-      triggerToast('Please provide a Block division (e.g. AH).');
+      triggerToast("Please provide a Block division (e.g. AH).");
       return;
     }
 
@@ -105,12 +140,12 @@ export default function TeamsView({
       name: teamName,
       block: teamBlock,
       logoUrl: teamLogoUrl || fallbackLogo,
-      captainName: teamCaptainName || 'TBD',
+      captainName: teamCaptainName || "TBD",
       captainPictureUrl: teamCaptainPictureUrl || fallbackAvatar,
-      viceCaptainName: teamViceCaptainName || 'TBD',
+      viceCaptainName: teamViceCaptainName || "TBD",
       viceCaptainPictureUrl: teamViceCaptainPictureUrl || fallbackAvatar,
       participantCount: 0, // Calculated / view-only
-      contactEmail: teamEmail || 'contact@community.org'
+      contactEmail: teamEmail || "contact@community.org",
     });
     setIsCreateOpen(false);
   };
@@ -119,14 +154,14 @@ export default function TeamsView({
     e.stopPropagation();
     setSelectedTeam(team);
     setTeamName(team.name);
-    setTeamBlock(team.block || 'AH');
+    setTeamBlock(team.block || "AH");
     setTeamLogoUrl(team.logoUrl);
     setTeamCaptainName(team.captainName);
     setTeamCaptainPictureUrl(team.captainPictureUrl);
     setTeamViceCaptainName(team.viceCaptainName);
     setTeamViceCaptainPictureUrl(team.viceCaptainPictureUrl);
     setTeamDateCreated(team.dateCreated);
-    setTeamEmail(team.contactEmail || 'contact@community.org');
+    setTeamEmail(team.contactEmail || "contact@community.org");
     setIsEditOpen(true);
   };
 
@@ -139,13 +174,13 @@ export default function TeamsView({
       name: teamName,
       block: teamBlock,
       logoUrl: teamLogoUrl || fallbackLogo,
-      captainName: teamCaptainName || 'TBD',
+      captainName: teamCaptainName || "TBD",
       captainPictureUrl: teamCaptainPictureUrl || fallbackAvatar,
-      viceCaptainName: teamViceCaptainName || 'TBD',
+      viceCaptainName: teamViceCaptainName || "TBD",
       viceCaptainPictureUrl: teamViceCaptainPictureUrl || fallbackAvatar,
       participantCount: selectedTeam.participantCount, // keep existing count as it is calculated/view-only
       dateCreated: teamDateCreated || selectedTeam.dateCreated,
-      contactEmail: teamEmail
+      contactEmail: teamEmail,
     });
     setIsEditOpen(false);
     setSelectedTeam(null);
@@ -158,7 +193,7 @@ export default function TeamsView({
 
   // Filter & search implementation
   const filteredTeams = useMemo(() => {
-    return teams.filter(t => {
+    return teams.filter((t) => {
       const search = searchQuery.toLowerCase();
       return (
         t.name.toLowerCase().includes(search) ||
@@ -186,10 +221,11 @@ export default function TeamsView({
             Community Teams Register
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Display list, blocks alignment, key captains, vice-captains, and quick details.
+            Display list, blocks alignment, key captains, vice-captains, and
+            quick details.
           </p>
         </div>
-        <button 
+        <button
           onClick={handleOpenCreateModal}
           className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#a83200] hover:bg-[#c03c05] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer whitespace-nowrap"
         >
@@ -221,22 +257,24 @@ export default function TeamsView({
                 <th className="py-4 px-6 select-none">Block</th>
                 <th className="py-4 px-6 select-none">Captain</th>
                 <th className="py-4 px-6 select-none">Vice Captain</th>
-                <th className="py-4 px-6 select-none text-center">Participants</th>
+                <th className="py-4 px-6 select-none text-center">
+                  Participants
+                </th>
                 <th className="py-4 px-6 select-none text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredTeams.map((team) => (
-                <tr 
+                <tr
                   key={team.id}
                   onClick={() => handleOpenViewModal(team)}
                   className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
                 >
                   {/* Column 1: Team Logo */}
                   <td className="py-4.5 px-6">
-                    <img 
-                      src={team.logoUrl || fallbackLogo} 
-                      alt={`${team.name} Logo`} 
+                    <img
+                      src={team.logoUrl || fallbackLogo}
+                      alt={`${team.name} Logo`}
                       className="w-11 h-11 rounded-xl object-cover border border-slate-200 bg-slate-50 shadow-xs group-hover:scale-105 transition-transform"
                       referrerPolicy="no-referrer"
                     />
@@ -257,16 +295,16 @@ export default function TeamsView({
                   {/* Column 3: Block */}
                   <td className="py-4.5 px-6">
                     <span className="font-mono font-black text-xs px-2.5 py-1 rounded-lg bg-slate-100/80 border border-slate-200/40 text-slate-700">
-                      {team.block || 'AH'}
+                      {team.block || "AH"}
                     </span>
                   </td>
 
                   {/* Column 4: Captain Name and Picture */}
                   <td className="py-4.5 px-6">
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={team.captainPictureUrl || fallbackAvatar} 
-                        alt={team.captainName} 
+                      <img
+                        src={team.captainPictureUrl || fallbackAvatar}
+                        alt={team.captainName}
                         className="w-8 h-8 rounded-full border border-amber-300 ring-2 ring-amber-100 object-cover bg-slate-100 shrink-0"
                         referrerPolicy="no-referrer"
                       />
@@ -284,9 +322,9 @@ export default function TeamsView({
                   {/* Column 5: Vice Captain Name and Picture */}
                   <td className="py-4.5 px-6">
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={team.viceCaptainPictureUrl || fallbackAvatar} 
-                        alt={team.viceCaptainName} 
+                      <img
+                        src={team.viceCaptainPictureUrl || fallbackAvatar}
+                        alt={team.viceCaptainName}
                         className="w-8 h-8 rounded-full border border-slate-200 object-cover bg-slate-100 shrink-0"
                         referrerPolicy="no-referrer"
                       />
@@ -309,7 +347,10 @@ export default function TeamsView({
                   </td>
 
                   {/* Column 7: Actions */}
-                  <td className="py-4.5 px-6 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td
+                    className="py-4.5 px-6 text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => handleOpenViewModal(team)}
@@ -343,7 +384,9 @@ export default function TeamsView({
         {filteredTeams.length === 0 && (
           <div className="bg-slate-50/50 border-t border-slate-100 rounded-b-2xl p-14 text-center text-slate-500 font-medium">
             <AlertCircle className="w-8 h-8 mx-auto text-slate-300" />
-            <p className="mt-3 text-sm font-semibold">No registered community teams matches "{searchQuery}".</p>
+            <p className="mt-3 text-sm font-semibold">
+              No registered community teams matches "{searchQuery}".
+            </p>
           </div>
         )}
       </div>
@@ -360,18 +403,27 @@ export default function TeamsView({
           <div className="space-y-6">
             {/* Header Identity banner */}
             <div className="flex items-center gap-4 bg-slate-50 p-4.5 rounded-2xl border border-slate-100">
-              <img 
-                src={selectedTeam.logoUrl || fallbackLogo} 
-                alt={`${selectedTeam.name} Logo`} 
+              <img
+                src={selectedTeam.logoUrl || fallbackLogo}
+                alt={`${selectedTeam.name} Logo`}
                 className="w-16 h-16 rounded-2xl object-cover border shrink-0 bg-white shadow-xs"
                 referrerPolicy="no-referrer"
               />
               <div className="min-w-0">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight whitespace-nowrap truncate">{selectedTeam.name}</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight whitespace-nowrap truncate">
+                  {selectedTeam.name}
+                </h2>
                 <div className="flex items-center gap-3 text-xs font-bold mt-1 text-slate-500">
-                  <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 tracking-tight text-[10px] font-black uppercase">Block: {selectedTeam.block}</span>
+                  <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 tracking-tight text-[10px] font-black uppercase">
+                    Block: {selectedTeam.block}
+                  </span>
                   <span>•</span>
-                  <span>Registered: <strong className="text-slate-800 font-extrabold">{selectedTeam.dateCreated}</strong></span>
+                  <span>
+                    Registered:{" "}
+                    <strong className="text-slate-800 font-extrabold">
+                      {selectedTeam.dateCreated}
+                    </strong>
+                  </span>
                 </div>
               </div>
             </div>
@@ -379,26 +431,32 @@ export default function TeamsView({
             {/* Leadership panel */}
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-amber-50/40 border border-amber-100/70 rounded-2xl flex flex-col items-center text-center">
-                <img 
-                  src={selectedTeam.captainPictureUrl || fallbackAvatar} 
-                  alt={selectedTeam.captainName} 
+                <img
+                  src={selectedTeam.captainPictureUrl || fallbackAvatar}
+                  alt={selectedTeam.captainName}
                   className="w-12 h-12 rounded-full border-2 border-amber-300 object-cover bg-white mb-2"
                   referrerPolicy="no-referrer"
                 />
                 <span className="text-[9px] font-black uppercase text-amber-800 tracking-wider flex items-center gap-0.5">
                   <Crown className="w-3 h-3 text-amber-500" /> Captain
                 </span>
-                <span className="text-sm font-black text-slate-850 mt-1 max-w-full truncate">{selectedTeam.captainName || 'N/A'}</span>
+                <span className="text-sm font-black text-slate-850 mt-1 max-w-full truncate">
+                  {selectedTeam.captainName || "N/A"}
+                </span>
               </div>
               <div className="p-4 bg-slate-50/80 border border-slate-100 rounded-2xl flex flex-col items-center text-center">
-                <img 
-                  src={selectedTeam.viceCaptainPictureUrl || fallbackAvatar} 
-                  alt={selectedTeam.viceCaptainName} 
+                <img
+                  src={selectedTeam.viceCaptainPictureUrl || fallbackAvatar}
+                  alt={selectedTeam.viceCaptainName}
                   className="w-12 h-12 rounded-full border-2 border-slate-200 object-cover bg-white mb-2"
                   referrerPolicy="no-referrer"
                 />
-                <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Vice Captain</span>
-                <span className="text-sm font-bold text-slate-800 mt-1 max-w-full truncate">{selectedTeam.viceCaptainName || 'N/A'}</span>
+                <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">
+                  Vice Captain
+                </span>
+                <span className="text-sm font-bold text-slate-800 mt-1 max-w-full truncate">
+                  {selectedTeam.viceCaptainName || "N/A"}
+                </span>
               </div>
             </div>
 
@@ -406,27 +464,37 @@ export default function TeamsView({
             <div className="space-y-3.5 bg-slate-50/70 border border-slate-200/40 rounded-2xl p-4.5">
               <div className="flex items-center justify-between text-xs text-slate-600">
                 <span className="font-bold flex items-center gap-1.5 text-slate-400">
-                  <Building className="w-4 h-4 text-slate-400" /> Sector Block Align:
+                  <Building className="w-4 h-4 text-slate-400" /> Sector Block
+                  Align:
                 </span>
-                <strong className="text-slate-800 font-black">{selectedTeam.block}</strong>
+                <strong className="text-slate-800 font-black">
+                  {selectedTeam.block}
+                </strong>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-600">
                 <span className="font-bold flex items-center gap-1.5 text-slate-400">
-                  <Users className="w-4 h-4 text-slate-400" /> Participant Count:
+                  <Users className="w-4 h-4 text-slate-400" /> Participant
+                  Count:
                 </span>
-                <strong className="text-slate-800 font-black">{selectedTeam.participantCount} active players</strong>
+                <strong className="text-slate-800 font-black">
+                  {selectedTeam.participantCount} active players
+                </strong>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-600">
                 <span className="font-bold flex items-center gap-1.5 text-slate-400">
                   <Calendar className="w-4 h-4 text-slate-400" /> Date Formed:
                 </span>
-                <strong className="text-slate-800 font-mono font-bold">{selectedTeam.dateCreated}</strong>
+                <strong className="text-slate-800 font-mono font-bold">
+                  {selectedTeam.dateCreated}
+                </strong>
               </div>
               <div className="flex items-center justify-between text-xs text-slate-600 pt-1.5 border-t border-slate-200/50">
                 <span className="font-bold flex items-center gap-1.5 text-slate-400">
                   <Mail className="w-4 h-4 text-slate-400" /> Registrar Contact:
                 </span>
-                <strong className="text-[#a83200] font-mono font-bold">{selectedTeam.contactEmail || 'office@community.org'}</strong>
+                <strong className="text-[#a83200] font-mono font-bold">
+                  {selectedTeam.contactEmail || "office@community.org"}
+                </strong>
               </div>
             </div>
 
@@ -452,7 +520,9 @@ export default function TeamsView({
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3.5 mt-1">
             <div>
-              <label className="block text-xs font-black uppercase text-slate-400">Team Name</label>
+              <label className="block text-xs font-black uppercase text-slate-400">
+                Team Name
+              </label>
               <input
                 type="text"
                 required
@@ -464,7 +534,9 @@ export default function TeamsView({
             </div>
 
             <div>
-              <label className="block text-xs font-black uppercase text-slate-400">Block (e.g., AH)</label>
+              <label className="block text-xs font-black uppercase text-slate-400">
+                Block (e.g., AH)
+              </label>
               <input
                 type="text"
                 required
@@ -478,7 +550,9 @@ export default function TeamsView({
           </div>
 
           <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
-            <label className="block text-xs font-black uppercase text-slate-400">Team Logo</label>
+            <label className="block text-xs font-black uppercase text-slate-400">
+              Team Logo
+            </label>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
@@ -500,10 +574,14 @@ export default function TeamsView({
           </div>
 
           <div className="border border-slate-200/60 rounded-xl p-3 bg-amber-50/10 space-y-3">
-            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">Captain Metadata</span>
+            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">
+              Captain Metadata
+            </span>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10.5px] font-bold text-slate-500">Name</label>
+                <label className="block text-[10.5px] font-bold text-slate-500">
+                  Name
+                </label>
                 <input
                   type="text"
                   required
@@ -514,21 +592,25 @@ export default function TeamsView({
                 />
               </div>
               <div>
-                <label className="block text-[10.5px] font-bold text-slate-500">Avatar Photo</label>
+                <label className="block text-[10.5px] font-bold text-slate-500">
+                  Avatar Photo
+                </label>
                 <div className="mt-1 flex gap-2">
                   <input
-                     type="text"
-                     placeholder="Paste picture URL..."
-                     value={teamCaptainPictureUrl}
-                     onChange={(e) => setTeamCaptainPictureUrl(e.target.value)}
-                     className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:outline-none focus:border-[#a83200]"
+                    type="text"
+                    placeholder="Paste picture URL..."
+                    value={teamCaptainPictureUrl}
+                    onChange={(e) => setTeamCaptainPictureUrl(e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:outline-none focus:border-[#a83200]"
                   />
                   <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded border border-slate-300 flex items-center justify-center cursor-pointer transition-colors whitespace-nowrap">
                     <span>Upload</span>
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e, setTeamCaptainPictureUrl)}
+                      onChange={(e) =>
+                        handleImageUpload(e, setTeamCaptainPictureUrl)
+                      }
                       className="hidden"
                     />
                   </label>
@@ -538,10 +620,14 @@ export default function TeamsView({
           </div>
 
           <div className="border border-slate-200/60 rounded-xl p-3 bg-slate-50/20 space-y-3">
-            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">Vice Captain Metadata</span>
+            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">
+              Vice Captain Metadata
+            </span>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10.5px] font-bold text-slate-500">Name</label>
+                <label className="block text-[10.5px] font-bold text-slate-500">
+                  Name
+                </label>
                 <input
                   type="text"
                   required
@@ -552,13 +638,17 @@ export default function TeamsView({
                 />
               </div>
               <div>
-                <label className="block text-[10.5px] font-bold text-slate-500">Avatar Photo</label>
+                <label className="block text-[10.5px] font-bold text-slate-500">
+                  Avatar Photo
+                </label>
                 <div className="mt-1 flex gap-2">
                   <input
                     type="text"
                     placeholder="Paste picture URL..."
                     value={teamViceCaptainPictureUrl}
-                    onChange={(e) => setTeamViceCaptainPictureUrl(e.target.value)}
+                    onChange={(e) =>
+                      setTeamViceCaptainPictureUrl(e.target.value)
+                    }
                     className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:outline-none"
                   />
                   <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded border border-slate-300 flex items-center justify-center cursor-pointer transition-colors whitespace-nowrap">
@@ -566,7 +656,9 @@ export default function TeamsView({
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e, setTeamViceCaptainPictureUrl)}
+                      onChange={(e) =>
+                        handleImageUpload(e, setTeamViceCaptainPictureUrl)
+                      }
                       className="hidden"
                     />
                   </label>
@@ -576,7 +668,9 @@ export default function TeamsView({
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase text-slate-400">Secretary Contact Email</label>
+            <label className="block text-xs font-black uppercase text-slate-400">
+              Secretary Contact Email
+            </label>
             <input
               type="email"
               required
@@ -615,7 +709,9 @@ export default function TeamsView({
         <form onSubmit={handleEditSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3.5 mt-1">
             <div>
-              <label className="block text-xs font-black uppercase text-slate-400">Team Name</label>
+              <label className="block text-xs font-black uppercase text-slate-400">
+                Team Name
+              </label>
               <input
                 type="text"
                 required
@@ -626,7 +722,9 @@ export default function TeamsView({
             </div>
 
             <div>
-              <label className="block text-xs font-black uppercase text-slate-400">Block Alignment</label>
+              <label className="block text-xs font-black uppercase text-slate-400">
+                Block Alignment
+              </label>
               <input
                 type="text"
                 required
@@ -640,7 +738,9 @@ export default function TeamsView({
           </div>
 
           <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
-            <label className="block text-xs font-black uppercase text-slate-400">Team Logo</label>
+            <label className="block text-xs font-black uppercase text-slate-400">
+              Team Logo
+            </label>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
@@ -663,10 +763,14 @@ export default function TeamsView({
 
           {/* Captain section */}
           <div className="border border-slate-200/60 rounded-xl p-3 bg-amber-50/10 space-y-3">
-            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">Captain Profile details</span>
+            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">
+              Captain Profile details
+            </span>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10.5px] font-bold text-slate-500">Name/Handle</label>
+                <label className="block text-[10.5px] font-bold text-slate-500">
+                  Name/Handle
+                </label>
                 <input
                   type="text"
                   required
@@ -677,7 +781,9 @@ export default function TeamsView({
                 />
               </div>
               <div>
-                <label className="block text-[10.5px] font-bold text-slate-500">Avatar Photo</label>
+                <label className="block text-[10.5px] font-bold text-slate-500">
+                  Avatar Photo
+                </label>
                 <div className="mt-1 flex gap-2">
                   <input
                     type="text"
@@ -691,7 +797,9 @@ export default function TeamsView({
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e, setTeamCaptainPictureUrl)}
+                      onChange={(e) =>
+                        handleImageUpload(e, setTeamCaptainPictureUrl)
+                      }
                       className="hidden"
                     />
                   </label>
@@ -702,10 +810,14 @@ export default function TeamsView({
 
           {/* Vice-captain section */}
           <div className="border border-slate-200/60 rounded-xl p-3 bg-slate-50/20 space-y-3">
-            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">Vice Captain Profile details</span>
+            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">
+              Vice Captain Profile details
+            </span>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10.5px] font-bold text-slate-500">Name/Handle</label>
+                <label className="block text-[10.5px] font-bold text-slate-500">
+                  Name/Handle
+                </label>
                 <input
                   type="text"
                   required
@@ -716,13 +828,17 @@ export default function TeamsView({
                 />
               </div>
               <div>
-                <label className="block text-[10.5px] font-bold text-slate-500">Avatar Photo</label>
+                <label className="block text-[10.5px] font-bold text-slate-500">
+                  Avatar Photo
+                </label>
                 <div className="mt-1 flex gap-2">
                   <input
                     type="text"
                     required
                     value={teamViceCaptainPictureUrl}
-                    onChange={(e) => setTeamViceCaptainPictureUrl(e.target.value)}
+                    onChange={(e) =>
+                      setTeamViceCaptainPictureUrl(e.target.value)
+                    }
                     className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:outline-none focus:border-[#a83200]"
                   />
                   <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded border border-slate-300 flex items-center justify-center cursor-pointer transition-colors whitespace-nowrap">
@@ -730,7 +846,9 @@ export default function TeamsView({
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e, setTeamViceCaptainPictureUrl)}
+                      onChange={(e) =>
+                        handleImageUpload(e, setTeamViceCaptainPictureUrl)
+                      }
                       className="hidden"
                     />
                   </label>
@@ -740,7 +858,9 @@ export default function TeamsView({
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase text-slate-400">Secretary Contact Email</label>
+            <label className="block text-xs font-black uppercase text-slate-400">
+              Secretary Contact Email
+            </label>
             <input
               type="email"
               required
@@ -752,7 +872,9 @@ export default function TeamsView({
 
           {/* New field: Formed Date */}
           <div>
-            <label className="block text-xs font-black uppercase text-slate-400">Created Date (e.g. Jun 17, 2026)</label>
+            <label className="block text-xs font-black uppercase text-slate-400">
+              Created Date (e.g. Jun 17, 2026)
+            </label>
             <input
               type="text"
               required
