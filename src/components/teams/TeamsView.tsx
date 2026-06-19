@@ -25,6 +25,7 @@ interface TeamsViewProps {
   onDeleteTeam: (id: string, name: string) => void;
   triggerToast: (msg: string) => void;
   setTeams?: React.Dispatch<React.SetStateAction<Team[]>>;
+  activeEditionId?: string;
 }
 
 // Fallback Avatars
@@ -42,6 +43,7 @@ export default function TeamsView({
   onDeleteTeam,
   triggerToast,
   setTeams,
+  activeEditionId,
 }: TeamsViewProps) {
   useEffect(() => {
     if (setTeams && !teamsFetched) {
@@ -77,10 +79,9 @@ export default function TeamsView({
   const [teamBlock, setTeamBlock] = useState("");
   const [teamLogoUrl, setTeamLogoUrl] = useState("");
   const [teamCaptainName, setTeamCaptainName] = useState("");
-  const [teamCaptainPictureUrl, setTeamCaptainPictureUrl] = useState("");
+  const [teamcaptainUrl, setTeamcaptainUrl] = useState("");
   const [teamViceCaptainName, setTeamViceCaptainName] = useState("");
-  const [teamViceCaptainPictureUrl, setTeamViceCaptainPictureUrl] =
-    useState("");
+  const [teamviceCaptainUrl, setTeamviceCaptainUrl] = useState("");
   const [teamDateCreated, setTeamDateCreated] = useState("");
   const [teamEmail, setTeamEmail] = useState("");
 
@@ -107,9 +108,9 @@ export default function TeamsView({
     setTeamBlock("AH");
     setTeamLogoUrl("");
     setTeamCaptainName("");
-    setTeamCaptainPictureUrl("");
+    setTeamcaptainUrl("");
     setTeamViceCaptainName("");
-    setTeamViceCaptainPictureUrl("");
+    setTeamviceCaptainUrl("");
     setTeamDateCreated(
       new Date().toLocaleDateString("en-US", {
         month: "short",
@@ -141,11 +142,15 @@ export default function TeamsView({
       block: teamBlock,
       logoUrl: teamLogoUrl || fallbackLogo,
       captainName: teamCaptainName || "TBD",
-      captainPictureUrl: teamCaptainPictureUrl || fallbackAvatar,
+      captainUrl: teamcaptainUrl || fallbackAvatar,
       viceCaptainName: teamViceCaptainName || "TBD",
-      viceCaptainPictureUrl: teamViceCaptainPictureUrl || fallbackAvatar,
-      participantCount: 0, // Calculated / view-only
-      contactEmail: teamEmail || "contact@community.org",
+      viceCaptainUrl: teamviceCaptainUrl || fallbackAvatar,
+      // participantCount: 0, // Calculated / view-only
+      email: teamEmail || "contact@community.org",
+      email: teamEmail || "contact@community.org",
+      captainUrl: teamcaptainUrl || fallbackAvatar,
+      viceCaptainUrl: teamviceCaptainUrl || fallbackAvatar,
+      editionId: activeEditionId || "0a534af4-8703-4ca7-bc8b-682c706e5d7b",
     });
     setIsCreateOpen(false);
   };
@@ -157,11 +162,11 @@ export default function TeamsView({
     setTeamBlock(team.block || "AH");
     setTeamLogoUrl(team.logoUrl);
     setTeamCaptainName(team.captainName);
-    setTeamCaptainPictureUrl(team.captainPictureUrl);
+    setTeamcaptainUrl(team.captainUrl);
     setTeamViceCaptainName(team.viceCaptainName);
-    setTeamViceCaptainPictureUrl(team.viceCaptainPictureUrl);
+    setTeamviceCaptainUrl(team.viceCaptainUrl);
     setTeamDateCreated(team.dateCreated);
-    setTeamEmail(team.contactEmail || "contact@community.org");
+    setTeamEmail(team.email || "contact@community.org");
     setIsEditOpen(true);
   };
 
@@ -175,12 +180,19 @@ export default function TeamsView({
       block: teamBlock,
       logoUrl: teamLogoUrl || fallbackLogo,
       captainName: teamCaptainName || "TBD",
-      captainPictureUrl: teamCaptainPictureUrl || fallbackAvatar,
+      captainUrl: teamcaptainUrl || fallbackAvatar,
       viceCaptainName: teamViceCaptainName || "TBD",
-      viceCaptainPictureUrl: teamViceCaptainPictureUrl || fallbackAvatar,
-      participantCount: selectedTeam.participantCount, // keep existing count as it is calculated/view-only
+      viceCaptainUrl: teamviceCaptainUrl || fallbackAvatar,
+      // participantCount: selectedTeam.participantCount, // keep existing count as it is calculated/view-only
       dateCreated: teamDateCreated || selectedTeam.dateCreated,
-      contactEmail: teamEmail,
+      email: teamEmail,
+      email: teamEmail,
+      captainUrl: teamcaptainUrl || fallbackAvatar,
+      viceCaptainUrl: teamviceCaptainUrl || fallbackAvatar,
+      editionId:
+        selectedTeam.editionId ||
+        activeEditionId ||
+        "0a534af4-8703-4ca7-bc8b-682c706e5d7b",
     });
     setIsEditOpen(false);
     setSelectedTeam(null);
@@ -200,7 +212,7 @@ export default function TeamsView({
         (t.block && t.block.toLowerCase().includes(search)) ||
         t.captainName.toLowerCase().includes(search) ||
         t.viceCaptainName.toLowerCase().includes(search) ||
-        (t.contactEmail && t.contactEmail.toLowerCase().includes(search))
+        (t.email && t.email.toLowerCase().includes(search))
       );
     });
   }, [teams, searchQuery]);
@@ -303,7 +315,7 @@ export default function TeamsView({
                   <td className="py-4.5 px-6">
                     <div className="flex items-center gap-3">
                       <img
-                        src={team.captainPictureUrl || fallbackAvatar}
+                        src={team.captainUrl || fallbackAvatar}
                         alt={team.captainName}
                         className="w-8 h-8 rounded-full border border-amber-300 ring-2 ring-amber-100 object-cover bg-slate-100 shrink-0"
                         referrerPolicy="no-referrer"
@@ -323,7 +335,7 @@ export default function TeamsView({
                   <td className="py-4.5 px-6">
                     <div className="flex items-center gap-3">
                       <img
-                        src={team.viceCaptainPictureUrl || fallbackAvatar}
+                        src={team.viceCaptainUrl || fallbackAvatar}
                         alt={team.viceCaptainName}
                         className="w-8 h-8 rounded-full border border-slate-200 object-cover bg-slate-100 shrink-0"
                         referrerPolicy="no-referrer"
@@ -432,7 +444,7 @@ export default function TeamsView({
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-amber-50/40 border border-amber-100/70 rounded-2xl flex flex-col items-center text-center">
                 <img
-                  src={selectedTeam.captainPictureUrl || fallbackAvatar}
+                  src={selectedTeam.captainUrl || fallbackAvatar}
                   alt={selectedTeam.captainName}
                   className="w-12 h-12 rounded-full border-2 border-amber-300 object-cover bg-white mb-2"
                   referrerPolicy="no-referrer"
@@ -446,7 +458,7 @@ export default function TeamsView({
               </div>
               <div className="p-4 bg-slate-50/80 border border-slate-100 rounded-2xl flex flex-col items-center text-center">
                 <img
-                  src={selectedTeam.viceCaptainPictureUrl || fallbackAvatar}
+                  src={selectedTeam.viceCaptainUrl || fallbackAvatar}
                   alt={selectedTeam.viceCaptainName}
                   className="w-12 h-12 rounded-full border-2 border-slate-200 object-cover bg-white mb-2"
                   referrerPolicy="no-referrer"
@@ -493,7 +505,7 @@ export default function TeamsView({
                   <Mail className="w-4 h-4 text-slate-400" /> Registrar Contact:
                 </span>
                 <strong className="text-[#a83200] font-mono font-bold">
-                  {selectedTeam.contactEmail || "office@community.org"}
+                  {selectedTeam.email || "office@community.org"}
                 </strong>
               </div>
             </div>
@@ -599,8 +611,8 @@ export default function TeamsView({
                   <input
                     type="text"
                     placeholder="Paste picture URL..."
-                    value={teamCaptainPictureUrl}
-                    onChange={(e) => setTeamCaptainPictureUrl(e.target.value)}
+                    value={teamcaptainUrl}
+                    onChange={(e) => setTeamcaptainUrl(e.target.value)}
                     className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:outline-none focus:border-[#a83200]"
                   />
                   <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded border border-slate-300 flex items-center justify-center cursor-pointer transition-colors whitespace-nowrap">
@@ -608,9 +620,7 @@ export default function TeamsView({
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) =>
-                        handleImageUpload(e, setTeamCaptainPictureUrl)
-                      }
+                      onChange={(e) => handleImageUpload(e, setTeamcaptainUrl)}
                       className="hidden"
                     />
                   </label>
@@ -645,10 +655,8 @@ export default function TeamsView({
                   <input
                     type="text"
                     placeholder="Paste picture URL..."
-                    value={teamViceCaptainPictureUrl}
-                    onChange={(e) =>
-                      setTeamViceCaptainPictureUrl(e.target.value)
-                    }
+                    value={teamviceCaptainUrl}
+                    onChange={(e) => setTeamviceCaptainUrl(e.target.value)}
                     className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:outline-none"
                   />
                   <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded border border-slate-300 flex items-center justify-center cursor-pointer transition-colors whitespace-nowrap">
@@ -657,7 +665,7 @@ export default function TeamsView({
                       type="file"
                       accept="image/*"
                       onChange={(e) =>
-                        handleImageUpload(e, setTeamViceCaptainPictureUrl)
+                        handleImageUpload(e, setTeamviceCaptainUrl)
                       }
                       className="hidden"
                     />
@@ -788,8 +796,8 @@ export default function TeamsView({
                   <input
                     type="text"
                     required
-                    value={teamCaptainPictureUrl}
-                    onChange={(e) => setTeamCaptainPictureUrl(e.target.value)}
+                    value={teamcaptainUrl}
+                    onChange={(e) => setTeamcaptainUrl(e.target.value)}
                     className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:outline-none focus:border-[#a83200]"
                   />
                   <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded border border-slate-300 flex items-center justify-center cursor-pointer transition-colors whitespace-nowrap">
@@ -797,9 +805,7 @@ export default function TeamsView({
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) =>
-                        handleImageUpload(e, setTeamCaptainPictureUrl)
-                      }
+                      onChange={(e) => handleImageUpload(e, setTeamcaptainUrl)}
                       className="hidden"
                     />
                   </label>
@@ -835,10 +841,8 @@ export default function TeamsView({
                   <input
                     type="text"
                     required
-                    value={teamViceCaptainPictureUrl}
-                    onChange={(e) =>
-                      setTeamViceCaptainPictureUrl(e.target.value)
-                    }
+                    value={teamviceCaptainUrl}
+                    onChange={(e) => setTeamviceCaptainUrl(e.target.value)}
                     className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[10px] text-slate-800 focus:outline-none focus:border-[#a83200]"
                   />
                   <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded border border-slate-300 flex items-center justify-center cursor-pointer transition-colors whitespace-nowrap">
@@ -847,7 +851,7 @@ export default function TeamsView({
                       type="file"
                       accept="image/*"
                       onChange={(e) =>
-                        handleImageUpload(e, setTeamViceCaptainPictureUrl)
+                        handleImageUpload(e, setTeamviceCaptainUrl)
                       }
                       className="hidden"
                     />

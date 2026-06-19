@@ -23,6 +23,7 @@ describe("EditionsView Component", () => {
         description: "Last years gorgeous collection",
         isActive: false,
         status: "draft" as const,
+        createdAt: "2024-06-15T08:00:00.000Z",
       },
       {
         id: "ed-2",
@@ -31,6 +32,7 @@ describe("EditionsView Component", () => {
         description: "Active autumn competitions",
         isActive: true,
         status: "active" as const,
+        createdAt: "2025-09-10T14:30:00.000Z",
       },
     ],
     isAdmin: true,
@@ -106,17 +108,57 @@ describe("EditionsView Component", () => {
   });
 
   it("allows deleting an edition from the card list and details modal (admin only)", () => {
-    // 1. Test delete from the card list
+    // 1. Test delete from the card list (inactive edition: ed-1)
     const { rerender } = render(<EditionsView {...mockProps} />);
     const deleteButtons = screen.getAllByTitle("Delete Edition");
     expect(deleteButtons.length).toBeGreaterThan(0);
+
+    // Click delete on inactive ed-1
     fireEvent.click(deleteButtons[0]);
+    expect(screen.getByText("Confirm Deletion")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Are you sure you want to delete the festival edition/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Warning: You are going to delete an active edition/i),
+    ).not.toBeInTheDocument();
+
+    // Click Cancel first
+    const cancelBtn = screen.getByRole("button", { name: /Cancel/i });
+    fireEvent.click(cancelBtn);
+    expect(screen.queryByText("Confirm Deletion")).not.toBeInTheDocument();
+    expect(mockProps.onDeleteEdition).not.toHaveBeenCalled();
+
+    // Click Delete again, then click Confirm
+    fireEvent.click(deleteButtons[0]);
+    const confirmBtn = screen.getByRole("button", { name: /Yes, Delete/i });
+    fireEvent.click(confirmBtn);
     expect(mockProps.onDeleteEdition).toHaveBeenCalledWith(
       "ed-1",
       "Summer Festival 2024",
     );
 
-    // 2. Test delete from the details modal
+    // 2. Test delete on an active edition (ed-2)
+    jest.clearAllMocks();
+    fireEvent.click(deleteButtons[1]);
+    expect(screen.getByText("Confirm Deletion")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Warning: You are going to delete an active edition and no edition will be active/i,
+      ),
+    ).toBeInTheDocument();
+
+    const confirmActiveBtn = screen.getByRole("button", {
+      name: /Yes, Delete/i,
+    });
+    fireEvent.click(confirmActiveBtn);
+    expect(mockProps.onDeleteEdition).toHaveBeenCalledWith(
+      "ed-2",
+      "Autumn Gala 2025",
+    );
+
+    // 3. Test delete from the details modal for ed-1
+    jest.clearAllMocks();
     const editionCard = screen
       .getByText("Summer Festival 2024")
       .closest(".cursor-pointer");
@@ -125,12 +167,19 @@ describe("EditionsView Component", () => {
     }
     const deleteModalBtn = screen.getByText("Delete Edition");
     fireEvent.click(deleteModalBtn);
+
+    // Now confirm deletion modal should be open, let's see if we see the text
+    expect(screen.getByText("Confirm Deletion")).toBeInTheDocument();
+    const finalConfirmBtn = screen.getByRole("button", {
+      name: /Yes, Delete/i,
+    });
+    fireEvent.click(finalConfirmBtn);
     expect(mockProps.onDeleteEdition).toHaveBeenCalledWith(
       "ed-1",
       "Summer Festival 2024",
     );
 
-    // 3. Test non-admin does not see delete buttons
+    // 4. Test non-admin does not see delete buttons
     const nonAdminProps = { ...mockProps, isAdmin: false };
     rerender(<EditionsView {...nonAdminProps} />);
     expect(screen.queryByTitle("Delete Edition")).not.toBeInTheDocument();
@@ -197,5 +246,29 @@ describe("EditionsView Component", () => {
     expect(
       screen.queryByRole("button", { name: /🚀 Activate/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("displays the creation date on the edition cards and in the details modal", () => {
+    render(<EditionsView {...mockProps} />);
+
+    // Mock editions have createdAt dates:
+    // ed-1: '2024-06-15T08:00:00.000Z' => formatted: Jun 15, 2024 (roughly, depending on timezone) or contains '2024' and 'Jun 15'
+    // Let's expect 'Created:' and the date text in the card.
+    expect(screen.getAllByText(/Created:/i).length).toBeGreaterThan(0);
+
+    // Click on the card to open details modal
+    const editionCard = screen
+      .getByText("Summer Festival 2024")
+      .closest(".cursor-pointer");
+    if (editionCard) {
+      fireEvent.click(editionCard);
+    }
+
+    // Modal should show "Created Date" header/label
+    expect(screen.getByText("Created Date")).toBeInTheDocument();
+    // And should show the formatted date or part of it
+    expect(
+      screen.getAllByText(/Jun 15, 2024|Jun 14, 2024/i).length,
+    ).toBeGreaterThan(0);
   });
 });

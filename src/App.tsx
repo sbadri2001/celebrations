@@ -1425,6 +1425,7 @@ export default function App() {
                   onUpdateTeam={handleUpdateTeam}
                   onDeleteTeam={handleDeleteTeam}
                   triggerToast={triggerToast}
+                  activeEditionId={activeEdition?.id}
                 />
               )}
             </>

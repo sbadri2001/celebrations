@@ -51,6 +51,7 @@ export default function EditionsView({
   const [editionDesc, setEditionDesc] = useState("");
   const [makeActiveImmediately, setMakeActiveImmediately] = useState(false);
   const [selectedEdition, setSelectedEdition] = useState<Edition | null>(null);
+  const [deletingEdition, setDeletingEdition] = useState<Edition | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,10 +322,7 @@ export default function EditionsView({
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md">
-                      ID: {edition.id}
-                    </span>
-                    <h4 className="font-extrabold text-slate-900 text-lg mt-1 tracking-tight flex items-center gap-2">
+                    <h4 className="font-extrabold text-slate-900 text-lg tracking-tight flex items-center gap-2">
                       {edition.name}
                       <span className="text-xs font-bold text-slate-400">
                         ({edition.year})
@@ -348,10 +346,21 @@ export default function EditionsView({
                 </div>
 
                 <div className="flex items-center justify-between border-t border-slate-50 pt-4 mt-4">
-                  <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-300" /> Event Year:{" "}
-                    {edition.year}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-300" /> Event
+                      Year: {edition.year}
+                    </span>
+                    {edition.createdAt && (
+                      <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 border-l border-slate-200 pl-3">
+                        Created:{" "}
+                        {new Date(edition.createdAt).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric", year: "numeric" },
+                        )}
+                      </span>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-2">
                     {isAdmin && !edition.isActive && (
@@ -382,7 +391,7 @@ export default function EditionsView({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onDeleteEdition(edition.id, edition.name);
+                          setDeletingEdition(edition);
                         }}
                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
                         title="Delete Edition"
@@ -414,19 +423,11 @@ export default function EditionsView({
         {selectedEdition && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Edition ID
-                </p>
-                <p className="text-sm font-mono font-bold text-slate-700 mt-1">
-                  {selectedEdition.id}
-                </p>
-              </div>
-              <div className="bg-slate-55 p-4 rounded-2xl border border-slate-200/60">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Status
                 </p>
-                <div className="mt-1">
+                <div>
                   {selectedEdition.isActive ? (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
                       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
@@ -438,6 +439,23 @@ export default function EditionsView({
                     </span>
                   )}
                 </div>
+              </div>
+              <div className="bg-slate-55 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Created Date
+                </p>
+                <p className="text-sm font-semibold text-slate-700">
+                  {selectedEdition.createdAt
+                    ? new Date(selectedEdition.createdAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        },
+                      )
+                    : "N/A"}
+                </p>
               </div>
             </div>
 
@@ -478,7 +496,7 @@ export default function EditionsView({
                 {isAdmin && (
                   <button
                     onClick={() => {
-                      onDeleteEdition(selectedEdition.id, selectedEdition.name);
+                      setDeletingEdition(selectedEdition);
                       setSelectedEdition(null);
                     }}
                     className="cursor-pointer bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5"
@@ -523,6 +541,56 @@ export default function EditionsView({
                   Close Details
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* CONFIRM DELETE EDITION MODAL */}
+      <Modal
+        isOpen={!!deletingEdition}
+        onClose={() => setDeletingEdition(null)}
+        title="Confirm Deletion"
+        subtitle="This action cannot be undone"
+        icon={<Trash2 className="w-5 h-5 text-red-600" />}
+        maxWidth="sm"
+      >
+        {deletingEdition && (
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-slate-600 leading-relaxed">
+              Are you sure you want to delete the festival edition{" "}
+              <strong className="text-slate-800">
+                "{deletingEdition.name}"
+              </strong>
+              ?
+            </p>
+            {deletingEdition.isActive && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold text-amber-800 leading-relaxed">
+                  Warning: You are going to delete an active edition and no
+                  edition will be active.
+                </p>
+              </div>
+            )}
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setDeletingEdition(null)}
+                className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-colors"
+                id="cancel-delete-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteEdition(deletingEdition.id, deletingEdition.name);
+                  setDeletingEdition(null);
+                }}
+                className="cursor-pointer bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all"
+                id="confirm-delete-btn"
+              >
+                Yes, Delete
+              </button>
             </div>
           </div>
         )}

@@ -39,20 +39,24 @@ export interface Team {
   block: string; // e.g., AH
   logoUrl: string;
   captainName: string;
-  captainPictureUrl: string;
+  captainUrl: string;
+  captainUrl?: string;
   viceCaptainName: string;
-  viceCaptainPictureUrl: string;
-  participantCount: number;
+  viceCaptainUrl: string;
+  viceCaptainUrl?: string;
+  participantCount?: number;
   dateCreated: string;
-  contactEmail: string;
+  email: string;
+  email?: string;
+  editionId?: string;
 }
 
 export interface Edition {
   id: string;
   name: string;
   year: number;
-  startDate?: string;
-  endDate?: string;
-  description?: string;
-  isActive?: boolean;
+  description: string;
+  isActive: boolean;
+  status: "draft" | "active";
+  createdAt?: string;
 }

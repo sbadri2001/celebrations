@@ -10,12 +10,16 @@ interface Team {
   block: string;
   logoUrl: string;
   captainName: string;
-  captainPictureUrl: string;
+  captainUrl: string;
+  captainUrl?: string;
   viceCaptainName: string;
-  viceCaptainPictureUrl: string;
-  participantCount: number;
+  viceCaptainUrl: string;
+  viceCaptainUrl?: string;
+  participantCount?: number;
   dateCreated: string;
-  contactEmail: string;
+  email: string;
+  email?: string;
+  editionId?: string;
 }
 
 // In-Memory Database seed for Teams
@@ -27,13 +31,13 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Daniel Carter",
-    captainPictureUrl:
+    captainUrl:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Marcus Vance",
-    viceCaptainPictureUrl:
+    viceCaptainUrl:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 15,
-    contactEmail: "lions.fc@example.com",
+    email: "lions.fc@example.com",
     dateCreated: "2 days ago",
   },
   {
@@ -43,13 +47,13 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1540747737956-37872f047fc7?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Sanjay Mehta",
-    captainPictureUrl:
+    captainUrl:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Lucas Reynolds",
-    viceCaptainPictureUrl:
+    viceCaptainUrl:
       "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 12,
-    contactEmail: "spinners@juniorcricket.org",
+    email: "spinners@juniorcricket.org",
     dateCreated: "Yesterday",
   },
   {
@@ -59,13 +63,13 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Elena Rostova",
-    captainPictureUrl:
+    captainUrl:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Sarah Jenkins",
-    viceCaptainPictureUrl:
+    viceCaptainUrl:
       "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 8,
-    contactEmail: "prana@yoga-active.com",
+    email: "prana@yoga-active.com",
     dateCreated: "3 days ago",
   },
   {
@@ -75,13 +79,13 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1518152006812-edab29b069ac?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Rupert Finch",
-    captainPictureUrl:
+    captainUrl:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Owen Vance",
-    viceCaptainPictureUrl:
+    viceCaptainUrl:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 18,
-    contactEmail: "strikers@westend.com",
+    email: "strikers@westend.com",
     dateCreated: "4 days ago",
   },
   {
@@ -91,13 +95,13 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1540747737956-37872f047fc7?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Maya Lin",
-    captainPictureUrl:
+    captainUrl:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Koji Sato",
-    viceCaptainPictureUrl:
+    viceCaptainUrl:
       "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 14,
-    contactEmail: "raiders@apex.org",
+    email: "raiders@apex.org",
     dateCreated: "5 days ago",
   },
   {
@@ -107,13 +111,13 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Leo Mercer",
-    captainPictureUrl:
+    captainUrl:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Diana Prince",
-    viceCaptainPictureUrl:
+    viceCaptainUrl:
       "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 10,
-    contactEmail: "coastal.crest@example.com",
+    email: "coastal.crest@example.com",
     dateCreated: "1 week ago",
   },
   {
@@ -123,13 +127,13 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Arjun Nair",
-    captainPictureUrl:
+    captainUrl:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Zoe Chen",
-    viceCaptainPictureUrl:
+    viceCaptainUrl:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 20,
-    contactEmail: "titans@united.org",
+    email: "titans@united.org",
     dateCreated: "2 weeks ago",
   },
 ];
@@ -344,13 +348,17 @@ async function startServer() {
     const {
       name,
       block,
+      editionId,
       logoUrl,
       captainName,
-      captainPictureUrl,
+      captainUrl,
+      captainUrl,
       viceCaptainName,
-      viceCaptainPictureUrl,
-      participantCount,
-      contactEmail,
+      viceCaptainUrl,
+      viceCaptainUrl,
+      // participantCount,
+      email,
+      email,
     } = req.body;
 
     // Validate request inputs (Mimic Nest.js ValidationPipe behavior)
@@ -366,6 +374,17 @@ async function startServer() {
       });
     }
 
+    const finalCaptainUrl =
+      captainUrl ||
+      captainUrl ||
+      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80";
+    const finalviceCaptainUrl =
+      viceCaptainUrl ||
+      viceCaptainUrl ||
+      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80";
+    const finalEmail = email || email || "placeholder@community.org";
+    const finalEditionId = editionId || "";
+
     const newTeam: Team = {
       id: `t-${Date.now()}`,
       name,
@@ -374,15 +393,15 @@ async function startServer() {
         logoUrl ||
         "https://images.unsplash.com/photo-1518152006812-edab29b069ac?auto=format&fit=crop&w=150&h=150&q=80",
       captainName: captainName || "TBD",
-      captainPictureUrl:
-        captainPictureUrl ||
-        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80",
+      captainUrl: finalCaptainUrl,
+      captainUrl: finalCaptainUrl,
       viceCaptainName: viceCaptainName || "TBD",
-      viceCaptainPictureUrl:
-        viceCaptainPictureUrl ||
-        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80",
-      participantCount: Number(participantCount) || 0,
-      contactEmail: contactEmail || "placeholder@community.org",
+      viceCaptainUrl: finalviceCaptainUrl,
+      viceCaptainUrl: finalviceCaptainUrl,
+      // participantCount: Number(participantCount) || 0,
+      email: finalEmail,
+      email: finalEmail,
+      editionId: finalEditionId,
       dateCreated: "Just now",
     };
 
@@ -406,13 +425,17 @@ async function startServer() {
     const {
       name,
       block,
+      editionId,
       logoUrl,
       captainName,
-      captainPictureUrl,
+      captainUrl,
+      captainUrl,
       viceCaptainName,
-      viceCaptainPictureUrl,
-      participantCount,
-      contactEmail,
+      viceCaptainUrl,
+      viceCaptainUrl,
+      // participantCount,
+      email,
+      email,
       dateCreated,
     } = req.body;
 
@@ -423,6 +446,27 @@ async function startServer() {
       });
     }
 
+    const finalCaptainUrl =
+      captainUrl !== undefined
+        ? captainUrl
+        : captainUrl !== undefined
+          ? captainUrl
+          : currentTeam.captainUrl;
+    const finalviceCaptainUrl =
+      viceCaptainUrl !== undefined
+        ? viceCaptainUrl
+        : viceCaptainUrl !== undefined
+          ? viceCaptainUrl
+          : currentTeam.viceCaptainUrl;
+    const finalEmail =
+      email !== undefined
+        ? email
+        : email !== undefined
+          ? email
+          : currentTeam.email;
+    const finalEditionId =
+      editionId !== undefined ? editionId : currentTeam.editionId;
+
     const updatedTeam: Team = {
       ...currentTeam,
       name: name !== undefined ? name : currentTeam.name,
@@ -430,24 +474,21 @@ async function startServer() {
       logoUrl: logoUrl !== undefined ? logoUrl : currentTeam.logoUrl,
       captainName:
         captainName !== undefined ? captainName : currentTeam.captainName,
-      captainPictureUrl:
-        captainPictureUrl !== undefined
-          ? captainPictureUrl
-          : currentTeam.captainPictureUrl,
+      captainUrl: finalCaptainUrl,
+      captainUrl: finalCaptainUrl,
       viceCaptainName:
         viceCaptainName !== undefined
           ? viceCaptainName
           : currentTeam.viceCaptainName,
-      viceCaptainPictureUrl:
-        viceCaptainPictureUrl !== undefined
-          ? viceCaptainPictureUrl
-          : currentTeam.viceCaptainPictureUrl,
-      participantCount:
-        participantCount !== undefined
-          ? Number(participantCount)
-          : currentTeam.participantCount,
-      contactEmail:
-        contactEmail !== undefined ? contactEmail : currentTeam.contactEmail,
+      viceCaptainUrl: finalviceCaptainUrl,
+      viceCaptainUrl: finalviceCaptainUrl,
+      // participantCount:
+      //   participantCount !== undefined
+      //     ? Number(participantCount)
+      //     : currentTeam.participantCount,
+      email: finalEmail,
+      email: finalEmail,
+      editionId: finalEditionId,
       dateCreated:
         dateCreated !== undefined ? dateCreated : currentTeam.dateCreated,
     };
@@ -480,6 +521,7 @@ async function startServer() {
     description: string;
     isActive: boolean;
     status: "draft" | "active";
+    createdAt?: string;
   }
 
   let editionsDb: Edition[] = [
@@ -491,6 +533,7 @@ async function startServer() {
         "Last years gorgeous community collection of events & art showcases",
       isActive: false,
       status: "draft",
+      createdAt: "2024-06-15T08:00:00.000Z",
     },
     {
       id: "ed-2",
@@ -500,6 +543,7 @@ async function startServer() {
         "Active autumn competitions featuring community block wars & food fairs",
       isActive: false,
       status: "draft",
+      createdAt: "2025-09-10T14:30:00.000Z",
     },
   ];
 
@@ -526,6 +570,7 @@ async function startServer() {
       description: description || "New community festival celebration edition.",
       isActive: shouldBeActive,
       status: shouldBeActive ? "active" : "draft",
+      createdAt: new Date().toISOString(),
     };
 
     editionsDb.push(newEdition);
