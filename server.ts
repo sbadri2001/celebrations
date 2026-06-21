@@ -10,14 +10,14 @@ interface Team {
   block: string;
   logoUrl: string;
   captainName: string;
-  captainUrl: string;
+  captainPictureUrl: string;
   captainUrl?: string;
   viceCaptainName: string;
-  viceCaptainUrl: string;
+  viceCaptainPictureUrl: string;
   viceCaptainUrl?: string;
-  participantCount?: number;
-  dateCreated: string;
-  email: string;
+  participantCount: number;
+  createdAt: string;
+  contactEmail: string;
   email?: string;
   editionId?: string;
 }
@@ -31,14 +31,15 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Daniel Carter",
-    captainUrl:
+    captainPictureUrl:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Marcus Vance",
-    viceCaptainUrl:
+    viceCaptainPictureUrl:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 15,
-    email: "lions.fc@example.com",
-    dateCreated: "2 days ago",
+    contactEmail: "lions.fc@example.com",
+    createdAt: "2 days ago",
+    editionId: "ed-1",
   },
   {
     id: "t2",
@@ -47,14 +48,15 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1540747737956-37872f047fc7?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Sanjay Mehta",
-    captainUrl:
+    captainPictureUrl:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Lucas Reynolds",
-    viceCaptainUrl:
+    viceCaptainPictureUrl:
       "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 12,
-    email: "spinners@juniorcricket.org",
-    dateCreated: "Yesterday",
+    contactEmail: "spinners@juniorcricket.org",
+    createdAt: "Yesterday",
+    editionId: "ed-1",
   },
   {
     id: "t3",
@@ -63,14 +65,15 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Elena Rostova",
-    captainUrl:
+    captainPictureUrl:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Sarah Jenkins",
-    viceCaptainUrl:
+    viceCaptainPictureUrl:
       "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 8,
-    email: "prana@yoga-active.com",
-    dateCreated: "3 days ago",
+    contactEmail: "prana@yoga-active.com",
+    createdAt: "3 days ago",
+    editionId: "ed-1",
   },
   {
     id: "t4",
@@ -79,14 +82,15 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1518152006812-edab29b069ac?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Rupert Finch",
-    captainUrl:
+    captainPictureUrl:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Owen Vance",
-    viceCaptainUrl:
+    viceCaptainPictureUrl:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 18,
-    email: "strikers@westend.com",
-    dateCreated: "4 days ago",
+    contactEmail: "strikers@westend.com",
+    createdAt: "4 days ago",
+    editionId: "ed-1",
   },
   {
     id: "t5",
@@ -95,14 +99,15 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1540747737956-37872f047fc7?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Maya Lin",
-    captainUrl:
+    captainPictureUrl:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Koji Sato",
-    viceCaptainUrl:
+    viceCaptainPictureUrl:
       "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 14,
-    email: "raiders@apex.org",
-    dateCreated: "5 days ago",
+    contactEmail: "raiders@apex.org",
+    createdAt: "5 days ago",
+    editionId: "ed-2",
   },
   {
     id: "t6",
@@ -111,14 +116,15 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Leo Mercer",
-    captainUrl:
+    captainPictureUrl:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Diana Prince",
-    viceCaptainUrl:
+    viceCaptainPictureUrl:
       "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 10,
-    email: "coastal.crest@example.com",
-    dateCreated: "1 week ago",
+    contactEmail: "coastal.crest@example.com",
+    createdAt: "1 week ago",
+    editionId: "ed-2",
   },
   {
     id: "t7",
@@ -127,14 +133,15 @@ let teamsDb: Team[] = [
     logoUrl:
       "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=150&h=150&q=80",
     captainName: "Arjun Nair",
-    captainUrl:
+    captainPictureUrl:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&h=150&q=80",
     viceCaptainName: "Zoe Chen",
-    viceCaptainUrl:
+    viceCaptainPictureUrl:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
     participantCount: 20,
-    email: "titans@united.org",
-    dateCreated: "2 weeks ago",
+    contactEmail: "titans@united.org",
+    createdAt: "2 weeks ago",
+    editionId: "ed-2",
   },
 ];
 
@@ -293,7 +300,7 @@ async function startServer() {
         .status(400)
         .json({ success: false, message: "Email identifier is required." });
     }
-    // Simulate invalid login for 'fail@example.com' or 'error' password
+    // Reject obvious invalid login values
     if (email === "fail@example.com" || password === "error") {
       return res
         .status(401)
@@ -338,9 +345,11 @@ async function startServer() {
     res.json({ success: true });
   });
 
-  // 1. GET ALL TEAMS (GET /api/teams)
-  app.get("/api/teams", (req, res) => {
-    res.json(teamsDb);
+  // 1. GET TEAMS PER EDITION (GET /api/editions/:editionId/teams)
+  app.get("/api/editions/:editionId/teams", (req, res) => {
+    const { editionId } = req.params;
+    const filteredTeams = teamsDb.filter((t) => t.editionId === editionId);
+    res.json(filteredTeams);
   });
 
   // 2. CREATE TEAM (POST /api/teams)
@@ -351,13 +360,13 @@ async function startServer() {
       editionId,
       logoUrl,
       captainName,
-      captainUrl,
+      captainPictureUrl,
       captainUrl,
       viceCaptainName,
+      viceCaptainPictureUrl,
       viceCaptainUrl,
-      viceCaptainUrl,
-      // participantCount,
-      email,
+      participantCount,
+      contactEmail,
       email,
     } = req.body;
 
@@ -376,13 +385,13 @@ async function startServer() {
 
     const finalCaptainUrl =
       captainUrl ||
-      captainUrl ||
+      captainPictureUrl ||
       "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80";
-    const finalviceCaptainUrl =
+    const finalViceCaptainUrl =
       viceCaptainUrl ||
-      viceCaptainUrl ||
+      viceCaptainPictureUrl ||
       "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80";
-    const finalEmail = email || email || "placeholder@community.org";
+    const finalEmail = email || contactEmail || "placeholder@community.org";
     const finalEditionId = editionId || "";
 
     const newTeam: Team = {
@@ -393,16 +402,16 @@ async function startServer() {
         logoUrl ||
         "https://images.unsplash.com/photo-1518152006812-edab29b069ac?auto=format&fit=crop&w=150&h=150&q=80",
       captainName: captainName || "TBD",
-      captainUrl: finalCaptainUrl,
+      captainPictureUrl: finalCaptainUrl,
       captainUrl: finalCaptainUrl,
       viceCaptainName: viceCaptainName || "TBD",
-      viceCaptainUrl: finalviceCaptainUrl,
-      viceCaptainUrl: finalviceCaptainUrl,
-      // participantCount: Number(participantCount) || 0,
-      email: finalEmail,
+      viceCaptainPictureUrl: finalViceCaptainUrl,
+      viceCaptainUrl: finalViceCaptainUrl,
+      participantCount: Number(participantCount) || 0,
+      contactEmail: finalEmail,
       email: finalEmail,
       editionId: finalEditionId,
-      dateCreated: "Just now",
+      createdAt: "Just now",
     };
 
     teamsDb.push(newTeam);
@@ -428,15 +437,15 @@ async function startServer() {
       editionId,
       logoUrl,
       captainName,
-      captainUrl,
+      captainPictureUrl,
       captainUrl,
       viceCaptainName,
+      viceCaptainPictureUrl,
       viceCaptainUrl,
-      viceCaptainUrl,
-      // participantCount,
+      participantCount,
+      contactEmail,
       email,
-      email,
-      dateCreated,
+      createdAt,
     } = req.body;
 
     if (name !== undefined && name.trim() === "") {
@@ -449,21 +458,21 @@ async function startServer() {
     const finalCaptainUrl =
       captainUrl !== undefined
         ? captainUrl
-        : captainUrl !== undefined
-          ? captainUrl
-          : currentTeam.captainUrl;
-    const finalviceCaptainUrl =
+        : captainPictureUrl !== undefined
+          ? captainPictureUrl
+          : currentTeam.captainPictureUrl;
+    const finalViceCaptainUrl =
       viceCaptainUrl !== undefined
         ? viceCaptainUrl
-        : viceCaptainUrl !== undefined
-          ? viceCaptainUrl
-          : currentTeam.viceCaptainUrl;
+        : viceCaptainPictureUrl !== undefined
+          ? viceCaptainPictureUrl
+          : currentTeam.viceCaptainPictureUrl;
     const finalEmail =
       email !== undefined
         ? email
-        : email !== undefined
-          ? email
-          : currentTeam.email;
+        : contactEmail !== undefined
+          ? contactEmail
+          : currentTeam.contactEmail;
     const finalEditionId =
       editionId !== undefined ? editionId : currentTeam.editionId;
 
@@ -474,23 +483,22 @@ async function startServer() {
       logoUrl: logoUrl !== undefined ? logoUrl : currentTeam.logoUrl,
       captainName:
         captainName !== undefined ? captainName : currentTeam.captainName,
-      captainUrl: finalCaptainUrl,
+      captainPictureUrl: finalCaptainUrl,
       captainUrl: finalCaptainUrl,
       viceCaptainName:
         viceCaptainName !== undefined
           ? viceCaptainName
           : currentTeam.viceCaptainName,
-      viceCaptainUrl: finalviceCaptainUrl,
-      viceCaptainUrl: finalviceCaptainUrl,
-      // participantCount:
-      //   participantCount !== undefined
-      //     ? Number(participantCount)
-      //     : currentTeam.participantCount,
-      email: finalEmail,
+      viceCaptainPictureUrl: finalViceCaptainUrl,
+      viceCaptainUrl: finalViceCaptainUrl,
+      participantCount:
+        participantCount !== undefined
+          ? Number(participantCount)
+          : currentTeam.participantCount,
+      contactEmail: finalEmail,
       email: finalEmail,
       editionId: finalEditionId,
-      dateCreated:
-        dateCreated !== undefined ? dateCreated : currentTeam.dateCreated,
+      createdAt: createdAt !== undefined ? createdAt : currentTeam.createdAt,
     };
 
     teamsDb[teamIndex] = updatedTeam;

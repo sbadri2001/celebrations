@@ -1,20 +1,24 @@
-import { Team } from '../../types';
-import { apiClient } from '../../lib/apiClient';
+import { Team } from "../../types";
+import { apiClient } from "../../lib/apiClient";
 
 export const TeamService = {
-  getAll: (): Promise<Team[]> => {
-    return apiClient.get<Team[]>('/teams');
+  getAll: (editionId?: string): Promise<Team[]> => {
+    if (!editionId) {
+      return Promise.resolve([]);
+    }
+    return apiClient.get<Team[]>(`/editions/${editionId}/teams`);
   },
-  
-  create: (team: Omit<Team, 'id' | 'dateCreated'>): Promise<Team> => {
-    return apiClient.post<Team>('/teams', team);
+
+  create: (team: Omit<Team, "id" | "createdAt">): Promise<Team> => {
+    return apiClient.post<Team>("/teams", team);
   },
-  
+
   update: (id: string, team: Team): Promise<Team> => {
-    return apiClient.put<Team>(`/teams/${id}`, team);
+    const { id: _, ...payload } = team as any;
+    return apiClient.put<Team>(`/teams/${id}`, payload);
   },
-  
+
   delete: (id: string): Promise<{ success: boolean; id: string }> => {
     return apiClient.delete<{ success: boolean; id: string }>(`/teams/${id}`);
-  }
+  },
 };

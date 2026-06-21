@@ -25,6 +25,15 @@ jest.mock("../common/Modal", () => ({
   },
 }));
 
+jest.mock("../../services/teams/teamService", () => ({
+  TeamService: {
+    getAll: jest.fn().mockResolvedValue([]),
+    create: jest.fn().mockResolvedValue({}),
+    update: jest.fn().mockResolvedValue({}),
+    delete: jest.fn().mockResolvedValue({ success: true }),
+  },
+}));
+
 describe("TeamsView Component", () => {
   const mockProps = {
     teams: [
@@ -34,12 +43,12 @@ describe("TeamsView Component", () => {
         block: "AN",
         logoUrl: "https://cats.com/logo.png",
         captainName: "James Carter",
-        captainUrl: "https://cats.com/james.png",
+        captainPictureUrl: "https://cats.com/james.png",
         viceCaptainName: "Lily Moore",
-        viceCaptainUrl: "https://cats.com/lily.png",
-        // participantCount: 12,
-        dateCreated: "Jun 10, 2026",
-        email: "contact@thundercats.org",
+        viceCaptainPictureUrl: "https://cats.com/lily.png",
+        participantCount: 12,
+        createdAt: "Jun 10, 2026",
+        contactEmail: "contact@thundercats.org",
       },
       {
         id: "t2",
@@ -47,12 +56,12 @@ describe("TeamsView Component", () => {
         block: "KH",
         logoUrl: "https://flares.com/logo.png",
         captainName: "Zara Ali",
-        captainUrl: "https://flares.com/zara.png",
+        captainPictureUrl: "https://flares.com/zara.png",
         viceCaptainName: "Leo Fritz",
-        viceCaptainUrl: "https://flares.com/leo.png",
-        // participantCount: 8,
-        dateCreated: "Jun 11, 2525",
-        email: "solar@flares.org",
+        viceCaptainPictureUrl: "https://flares.com/leo.png",
+        participantCount: 8,
+        createdAt: "Jun 11, 2525",
+        contactEmail: "solar@flares.org",
       },
     ],
     onAddTeam: jest.fn(),
@@ -103,6 +112,10 @@ describe("TeamsView Component", () => {
     const disbandBtn = screen.getAllByTitle("Disband Team Record")[0];
     fireEvent.click(disbandBtn);
 
+    // Click confirm inside double-check confirmation modal
+    const confirmBtn = screen.getByRole("button", { name: /Yes, Disband/i });
+    fireEvent.click(confirmBtn);
+
     expect(mockProps.onDeleteTeam).toHaveBeenCalledWith("t1", "Thunder Cats");
   });
 
@@ -117,17 +130,20 @@ describe("TeamsView Component", () => {
     fireEvent.click(createBtn);
 
     // Fill in required fields
-    const nameInput = container.querySelector(
-      'input[placeholder="E.g., Westend Strikers"]',
-    ) as HTMLInputElement;
+    const nameInput = screen.getByPlaceholderText("E.g., Westend Strikers");
     fireEvent.change(nameInput, { target: { value: "Blue Team" } });
 
-    // Block field - in the create form, block input is of type="text"
-    // Let's find index/names of form input tags
-    const inputs = container.querySelectorAll("form input");
-    // inputs[0] is name, inputs[1] is block
-    const blockInput = inputs[1] as HTMLInputElement;
-    fireEvent.change(blockInput, { target: { value: "A Block" } });
+    const blockInput = screen.getByPlaceholderText("E.g., AH");
+    fireEvent.change(blockInput, { target: { value: "A BLOCK" } });
+
+    const captainNameInput = screen.getByPlaceholderText("E.g., Daniel Carter");
+    fireEvent.change(captainNameInput, { target: { value: "Captain Jack" } });
+
+    const viceCaptainNameInput =
+      screen.getByPlaceholderText("E.g., Marcus Vance");
+    fireEvent.change(viceCaptainNameInput, {
+      target: { value: "Vice Captain Sparrow" },
+    });
 
     const emailInput = container.querySelector(
       'form input[type="email"]',
@@ -140,17 +156,14 @@ describe("TeamsView Component", () => {
 
     expect(mockProps.onAddTeam).toHaveBeenCalled();
     const passedPayload = mockProps.onAddTeam.mock.calls[0][0];
-    expect(passedPayload).toEqual(
-      expect.objectContaining({
-        name: "Blue Team",
-        block: "A Block",
-        email: "blue@test.com",
-        email: "blue@test.com",
-        captainUrl: expect.stringContaining("http"),
-        viceCaptainUrl: expect.stringContaining("http"),
-        editionId: "0a534af4-8703-4ca7-bc8b-682c706e5d7b",
-      }),
-    );
+    expect(passedPayload).toEqual({
+      name: "Blue Team",
+      block: "A BLOCK",
+      email: "blue@test.com",
+      captainName: "Captain Jack",
+      viceCaptainName: "Vice Captain Sparrow",
+      editionId: "0a534af4-8703-4ca7-bc8b-682c706e5d7b",
+    });
   });
 
   it("submits update payload with captainUrl, viceCaptainUrl, email, and editionId keys", () => {
@@ -175,14 +188,33 @@ describe("TeamsView Component", () => {
 
     expect(mockProps.onUpdateTeam).toHaveBeenCalled();
     const passedPayload = mockProps.onUpdateTeam.mock.calls[0][0];
-    expect(passedPayload).toEqual(
-      expect.objectContaining({
-        email: "new-email@team.com",
-        email: "new-email@team.com",
-        captainUrl: expect.stringContaining("http"),
-        viceCaptainUrl: expect.stringContaining("http"),
-        editionId: "0a534af4-8703-4ca7-bc8b-682c706e5d7b",
-      }),
+    expect(passedPayload).toEqual({
+      id: "t1",
+      name: "Thunder Cats",
+      block: "AN",
+      email: "new-email@team.com",
+      logoUrl: "https://cats.com/logo.png",
+      captainName: "James Carter",
+      captainUrl: "https://cats.com/james.png",
+      viceCaptainName: "Lily Moore",
+      viceCaptainUrl: "https://cats.com/lily.png",
+      editionId: "0a534af4-8703-4ca7-bc8b-682c706e5d7b",
+    });
+  });
+
+  it("calls TeamService.getAll with activeEditionId on mount", () => {
+    const setTeamsMock = jest.fn();
+    const activeEditionId = "ed-active-123";
+
+    render(
+      <TeamsView
+        {...mockProps}
+        setTeams={setTeamsMock}
+        activeEditionId={activeEditionId}
+      />,
     );
+
+    const { TeamService } = require("../../services/teams/teamService");
+    expect(TeamService.getAll).toHaveBeenCalledWith("ed-active-123");
   });
 });

@@ -45,7 +45,7 @@ export interface Team {
   viceCaptainUrl: string;
   viceCaptainUrl?: string;
   participantCount?: number;
-  dateCreated: string;
+  createdAt: string;
   email: string;
   email?: string;
   editionId?: string;

@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   AlertCircle,
   ArrowRight,
-  Sparkles,
   User,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -40,7 +39,7 @@ export default function LoginScreen({
   const [countryCode] = useState("+1");
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
 
-  // Custom states for interactive simulation
+  // Custom states for inline validation and backend errors
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [showInlineErrors, setShowInlineErrors] = useState(false);
   const [backendErrorMessage, setBackendErrorMessage] = useState("");
@@ -69,13 +68,6 @@ export default function LoginScreen({
     if (isEmailInvalid || isPasswordInvalid) {
       setShowInlineErrors(true);
       // Only show inline error messages, do not trigger modal showErrorDialog
-      return;
-    }
-
-    // Simulate backend error if specified inputs are used
-    if (email === "fail@example.com" || password === "error") {
-      setBackendErrorMessage("Invalid email or password (simulation)");
-      setShowErrorDialog(true);
       return;
     }
 
@@ -135,12 +127,6 @@ export default function LoginScreen({
     if (isNameInvalid || isEmailInvalid || isPasswordInvalid) {
       setShowInlineErrors(true);
       // Only show inline error messages, do not trigger modal showErrorDialog
-      return;
-    }
-
-    if (email === "fail@example.com" || password === "error") {
-      setBackendErrorMessage("Simulation failure during registration");
-      setShowErrorDialog(true);
       return;
     }
 
@@ -302,76 +288,6 @@ export default function LoginScreen({
 
       {/* CORE WRAPPER CONTAINER */}
       <div className="w-full max-w-md mx-auto my-auto relative z-10">
-        {/* INTERACTIVE SANITIZE / TEST PANEL */}
-        <div className="mb-4 bg-amber-50/90 border border-amber-200/80 rounded-2xl p-3.5 shadow-xs font-sans text-xs text-amber-900 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-bold flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" /> Mode &
-              Validation Controls:
-            </span>
-            <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
-              Simulation
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5 mt-1">
-            <button
-              type="button"
-              onClick={() => {
-                setShowInlineErrors(!showInlineErrors);
-                triggerToast(
-                  showInlineErrors
-                    ? "Inline errors disabled"
-                    : "Inline errors enabled",
-                );
-              }}
-              className={`py-1.5 px-2 rounded-lg text-left font-semibold border flex items-center justify-between ${showInlineErrors ? "bg-amber-100 border-amber-300 text-amber-900" : "bg-white border-slate-200 text-slate-500"}`}
-            >
-              <span>Inline Error Messages</span>
-              <span
-                className={`w-2 h-2 rounded-full ${showInlineErrors ? "bg-amber-600" : "bg-slate-300"}`}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setBackendErrorMessage(
-                  "Simulated error: Nest.js server connection refused on port 3001",
-                );
-                setShowErrorDialog(true);
-                triggerToast("Failure overlay triggered");
-              }}
-              className="py-1.5 px-2 rounded-lg text-left font-semibold border bg-white hover:bg-slate-50 border-slate-200 text-slate-700 flex items-center justify-between whitespace-nowrap"
-            >
-              <span>Trigger Error Dialog</span>
-              <AlertCircle className="w-3.5 h-3.5 text-red-600" />
-            </button>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap justify-between pt-1 font-sans border-t border-amber-200/50 mt-1">
-            <span className="font-bold text-[10px] text-amber-800">
-              Quick view templates:
-            </span>
-            <div className="flex items-center gap-1">
-              {[
-                { id: "login", label: "Email" },
-                { id: "register", label: "Register" },
-                { id: "phone", label: "Phone" },
-                { id: "otp", label: "OTP" },
-                { id: "reset-password", label: "Reset" },
-                { id: "check-email", label: "Check" },
-              ].map((view) => (
-                <button
-                  key={view.id}
-                  type="button"
-                  onClick={() => setAuthScreen(view.id as any)}
-                  className={`px-2 py-1 rounded text-[10px] font-bold ${authScreen === view.id ? "bg-amber-600 text-white" : "bg-amber-100/60 hover:bg-amber-200/60 text-amber-950"}`}
-                >
-                  {view.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* MAIN CONTAINER BOX WITH SHADOW AND BLURRED COVERS */}
         <div className="bg-white/95 rounded-[2.2rem] border border-[#f5ded7] shadow-xl p-8 relative overflow-hidden transition-all duration-300 min-h-[510px] flex flex-col justify-center">
           <AnimatePresence mode="wait">
@@ -986,7 +902,7 @@ export default function LoginScreen({
             )}
           </AnimatePresence>
 
-          {/* BACKGROUND DIALOG OVERLAY PORTAL (Simulated login failed) */}
+          {/* BACKGROUND DIALOG OVERLAY PORTAL */}
           <AnimatePresence>
             {showErrorDialog && (
               <motion.div

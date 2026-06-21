@@ -60,31 +60,13 @@ import { EditionService } from "./services/editions/editionService";
 let editionsFetched = false;
 
 export default function App() {
-  // Authentication & Simulation States
+  // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<{
     name: string;
     email: string;
     role: string;
   } | null>(null);
-  const [authScreen, setAuthScreen] = useState<
-    "login" | "phone" | "otp" | "reset-password" | "check-email"
-  >("login");
-  const [authEmail, setAuthEmail] = useState("you@example.com");
-  const [authPassword, setAuthPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [phoneCountryCode, setPhoneCountryCode] = useState("+1");
-  const [phoneNumber, setPhoneNumber] = useState("(555) 000-0000");
-  const [otpValues, setOtpValues] = useState<string[]>([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-  ]);
-  const [showLoginErrorDialog, setShowLoginErrorDialog] = useState(false);
-  const [enableInlineErrors, setEnableInlineErrors] = useState(true);
 
   // Navigation & UI States
   const [activeTab, setActiveTab] = useState<
@@ -457,7 +439,7 @@ export default function App() {
   // Teams Store
   const [teams, setTeams] = useState<Team[]>([]);
 
-  const handleAddTeam = (newTeam: Omit<Team, "id" | "dateCreated">) => {
+  const handleAddTeam = (newTeam: Omit<Team, "id" | "createdAt">) => {
     TeamService.create(newTeam)
       .then((res: any) => {
         const savedTeam = res && res.status === "SUCCESS" ? res.data : res;
@@ -494,19 +476,15 @@ export default function App() {
   };
 
   const handleDeleteTeam = (id: string, name: string) => {
-    if (
-      window.confirm(`Are you sure you want to disband the team "${name}"?`)
-    ) {
-      TeamService.delete(id)
-        .then(() => {
-          setTeams(teams.filter((t) => t.id !== id));
-          triggerToast(`Team "${name}" has been disbanded!`);
-        })
-        .catch((err) => {
-          console.error("Disband team failed:", err);
-          triggerToast("Failed to disband team on server.");
-        });
-    }
+    TeamService.delete(id)
+      .then(() => {
+        setTeams(teams.filter((t) => t.id !== id));
+        triggerToast(`Team "${name}" has been disbanded!`);
+      })
+      .catch((err) => {
+        console.error("Disband team failed:", err);
+        triggerToast("Failed to disband team on server.");
+      });
   };
 
   // Calculated Live Counters
@@ -833,12 +811,8 @@ export default function App() {
     });
   }, [events, eventSearch, eventFilter]);
 
-  const userToUse = currentUser || {
-    name: "Admin User",
-    email: "admin@example.com",
-    role: "admin",
-  };
-  const isAdmin = userToUse.role?.toLowerCase() === "admin";
+  const userToUse = currentUser;
+  const isAdmin = userToUse?.role?.toLowerCase() === "admin";
   const activeEdition = editions.find((e) => e.isActive);
   const isEditionScopedTab = [
     "dashboard",
@@ -1208,11 +1182,9 @@ export default function App() {
                       setMobileMenuOpen(false);
                       setCurrentUser(null);
                       editionsFetched = false;
-                      triggerToast(
-                        "Logged out. Mode switched to login simulation variations.",
-                      );
+                      triggerToast("Logged out successfully.");
                     }}
-                    title="Sign Out (Simulation Mode)"
+                    title="Sign Out"
                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer mr-1"
                   >
                     <LogOut className="w-4.5 h-4.5" />
@@ -1353,11 +1325,9 @@ export default function App() {
                 setIsLoggedIn(false);
                 setCurrentUser(null);
                 editionsFetched = false;
-                triggerToast(
-                  "Logged out. Mode switched to login simulation variations.",
-                );
+                triggerToast("Logged out successfully.");
               }}
-              title="Sign Out (Simulation Mode)"
+              title="Sign Out"
               className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer mr-1"
             >
               <LogOut className="w-4 h-4" />
@@ -1420,6 +1390,7 @@ export default function App() {
               {activeTab === "teams" && (
                 <TeamsView
                   teams={teams}
+                  isAdmin={isAdmin}
                   setTeams={setTeams}
                   onAddTeam={handleAddTeam}
                   onUpdateTeam={handleUpdateTeam}
